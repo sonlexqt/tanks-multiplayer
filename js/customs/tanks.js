@@ -11,19 +11,18 @@ var PlayerTank = function(x, y, game, cursors){
     this.tank.anchor.setTo(0.5, 0.5);
     this.game.physics.arcade.enable(this.tank);
     this.tank.body.collideWorldBounds = true;
-    this.tank.body.immovable = true;
 
     // Attach the turret to the tank
-    this.turret = game.add.sprite(0, 0, 'playerTank', 'turret');
-    this.turret.anchor.setTo(0.3, 0.5);
+    this.tank.turret = game.add.sprite(0, 0, 'playerTank', 'turret');
+    this.tank.turret.anchor.setTo(0.3, 0.5);
 
     // Attach the shadow of the tank
-    this.shadow = game.add.sprite(0, 0, 'playerTank', 'shadow');
-    this.shadow.anchor.setTo(0.5, 0.5);
+    this.tank.shadow = game.add.sprite(0, 0, 'playerTank', 'shadow');
+    this.tank.shadow.anchor.setTo(0.5, 0.5);
 
     // Bring the turret and the tank body to the front
     this.tank.bringToTop();
-    this.turret.bringToTop();
+    this.tank.turret.bringToTop();
 
     // Bullets
     this.bullets = game.add.group();
@@ -38,15 +37,17 @@ var PlayerTank = function(x, y, game, cursors){
     this.currentSpeed = 0;
     this.coolDownTime = 500;
     this.fireTime = 0;
+
+    this.tank.hp = 10;
 };
 
 PlayerTank.prototype.update = function(){
-    this.turret.x = this.tank.x;
-    this.turret.y = this.tank.y;
-    this.shadow.x = this.tank.x;
-    this.shadow.y = this.tank.y;
-    this.shadow.angle = this.tank.angle;
-    this.turret.rotation = this.game.physics.arcade.angleToPointer(this.turret);
+    this.tank.turret.x = this.tank.x;
+    this.tank.turret.y = this.tank.y;
+    this.tank.shadow.x = this.tank.x;
+    this.tank.shadow.y = this.tank.y;
+    this.tank.shadow.angle = this.tank.angle;
+    this.tank.turret.rotation = this.game.physics.arcade.angleToPointer(this.tank.turret);
 
     // Controls handlers
     if (this.cursors.left.isDown){
@@ -82,7 +83,7 @@ PlayerTank.prototype.fire = function(){
     if (this.bullets.countDead() > 0){
         // Group.getFirstExists(isExist)
         var bullet = this.bullets.getFirstExists(false);
-        bullet.reset(this.turret.x, this.turret.y);
+        bullet.reset(this.tank.turret.x, this.tank.turret.y);
         // Physics.Arcade.moveToPointer(displayObject, speed (pixels/sec), pointer, maxTime (ms))
         bullet.rotation = this.game.physics.arcade.moveToPointer(bullet, 1000, this.game.input.activePointer, 500);
         this.fireTime = this.game.time.now;
@@ -100,16 +101,16 @@ var EnemyTank = function(x, y, game, playerTank){
     this.tank.body.immovable = true;
 
     // Attach the turret to the tank
-    this.turret = game.add.sprite(0, 0, 'enemyTank', 'turret');
-    this.turret.anchor.setTo(0.3, 0.5);
+    this.tank.turret = game.add.sprite(0, 0, 'enemyTank', 'turret');
+    this.tank.turret.anchor.setTo(0.3, 0.5);
 
     // Attach the shadow of the tank
-    this.shadow = game.add.sprite(0, 0, 'enemyTank', 'shadow');
-    this.shadow.anchor.setTo(0.5, 0.5);
+    this.tank.shadow = game.add.sprite(0, 0, 'enemyTank', 'shadow');
+    this.tank.shadow.anchor.setTo(0.5, 0.5);
 
     // Bring the turret and the tank body to the front
     this.tank.bringToTop();
-    this.turret.bringToTop();
+    this.tank.turret.bringToTop();
 
     // Bullets
     this.bullets = game.add.group();
@@ -124,28 +125,49 @@ var EnemyTank = function(x, y, game, playerTank){
     this.currentSpeed = 0;
     this.coolDownTime = 500;
     this.fireTime = 0;
+    this.tank.hp = 5;
 };
 
 EnemyTank.prototype.update = function(){
-    this.turret.x = this.tank.x;
-    this.turret.y = this.tank.y;
-    this.shadow.x = this.tank.x;
-    this.shadow.y = this.tank.y;
-    this.shadow.angle = this.tank.angle;
-    this.turret.rotation = this.game.physics.arcade.angleBetween(this.tank, this.playerTank.tank);
+    this.tank.turret.x = this.tank.x;
+    this.tank.turret.y = this.tank.y;
+    this.tank.shadow.x = this.tank.x;
+    this.tank.shadow.y = this.tank.y;
+    this.tank.shadow.angle = this.tank.angle;
+    this.tank.turret.rotation = this.game.physics.arcade.angleBetween(this.tank, this.playerTank.tank);
+
+    this.game.physics.arcade.collide(this.playerTank.tank, this.tank);
+    this.game.physics.arcade.overlap(this.playerTank.bullets, this.tank, this.getShotByPlayerTank, null, this);
 };
+
+EnemyTank.prototype.getShotByPlayerTank = function(tank, bullet){
+    bullet.kill();
+    tank.hp -= BULLET_DAMAGE;
+    if (tank.hp <= 0){
+        var explosionAnimation = explosions.getFirstExists(false);
+        explosionAnimation.reset(tank.x, tank.y);
+        explosionAnimation.play('explode', 30, false, true);
+        tank.kill();
+        tank.turret.kill();
+        tank.shadow.kill();
+    }
+};
+
+var playerTank;
+var cursors;
+var NUM_OF_ENEMY_TANKS = 5;
+var enemyTanks = [];
+var NUM_OF_EXPLOSIONS = 10;
+var explosions;
+var BULLET_DAMAGE = 1;
 
 function preload(){
     game.load.image('earth', '/assets/images/scorched_earth.png');
     game.load.atlas('playerTank', '/assets/images/tanks.png', '/assets/images/tanks.json');
     game.load.atlas('enemyTank', '/assets/images/enemy-tanks.png', '/assets/images/tanks.json');
     game.load.image('bullet', '/assets/images/bullet.png');
+    game.load.spritesheet('explosion', '/assets/images/explosion.png', 64, 64, 23);
 }
-
-var playerTank;
-var cursors;
-var numOfEnemyTanks = 5;
-var enemyTanks = [];
 
 function create(){
     //game.world.setBounds(-1000, -1000, 2000, 2000);
@@ -158,15 +180,21 @@ function create(){
 
     playerTank = new PlayerTank(game.world.centerX, game.world.centerY, game, cursors);
 
-    for (var i = 0; i < numOfEnemyTanks; i++){
+    for (var i = 0; i < NUM_OF_ENEMY_TANKS; i++){
         enemyTanks[i] = new EnemyTank(game.world.randomX, game.world.randomY, game, playerTank);
+    }
+
+    explosions = game.add.group();
+    for (var i = 0; i < NUM_OF_EXPLOSIONS; i++){
+        var explosion = explosions.create(0, 0, 'explosion', 0, false);
+        explosion.anchor.setTo(0.5, 0.5);
+        explosion.animations.add('explode');
     }
 }
 
 function update(){
     playerTank.update();
-    for (var i = 0; i < numOfEnemyTanks; i++){
-        game.physics.arcade.collide(playerTank.tank, enemyTanks[i].tank);
+    for (var i = 0; i < NUM_OF_ENEMY_TANKS; i++){
         enemyTanks[i].update();
     }
 }
