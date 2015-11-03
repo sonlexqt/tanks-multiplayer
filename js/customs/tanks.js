@@ -132,6 +132,7 @@ EnemyTank.prototype.update = function(){
     this.shadow.x = this.tank.x;
     this.shadow.y = this.tank.y;
     this.shadow.angle = this.tank.angle;
+    this.turret.rotation = this.game.physics.arcade.angleBetween(this.tank, this.playerTank.tank);
 };
 
 function preload(){
