@@ -11,6 +11,7 @@ var PlayerTank = function(x, y, game, cursors){
     this.tank.anchor.setTo(0.5, 0.5);
     this.game.physics.arcade.enable(this.tank);
     this.tank.body.collideWorldBounds = true;
+    this.tank.body.immovable = true;
 
     // Attach the turret to the tank
     this.turret = game.add.sprite(0, 0, 'playerTank', 'turret');
@@ -96,7 +97,8 @@ var EnemyTank = function(x, y, game, playerTank){
     this.tank.anchor.setTo(0.5, 0.5);
     this.game.physics.arcade.enable(this.tank);
     this.tank.body.collideWorldBounds = true;
-    
+    this.tank.body.immovable = true;
+
     // Attach the turret to the tank
     this.turret = game.add.sprite(0, 0, 'enemyTank', 'turret');
     this.turret.anchor.setTo(0.3, 0.5);
@@ -163,7 +165,7 @@ function create(){
 function update(){
     playerTank.update();
     for (var i = 0; i < numOfEnemyTanks; i++){
-        game.physics.arcade.collide(playerTank, enemyTanks[i].tank);
+        game.physics.arcade.collide(playerTank.tank, enemyTanks[i].tank);
         enemyTanks[i].update();
     }
 }
