@@ -3,21 +3,32 @@ var GAME_HEIGHT = 600;
 
 game = new Phaser.Game(GAME_WIDTH, GAME_HEIGHT, Phaser.AUTO, 'tank-game', { preload: preload, create: create, update: update });
 
-var PlayerTank = function(x, y, game, cursors){
-    this.game = game;
-    this.cursors = cursors;
+/**
+ * Abstract Tank class
+ * @param x
+ * @param y
+ * @param game
+ * @param tankSprite
+ * @constructor
+ */
+var Tank = function(x, y, game, tankSprite){
+    if (this.constructor === Tank) {
+        throw new Error("Can't instantiate abstract class!");
+    }
 
-    this.tank = game.add.sprite(x, y, 'playerTank', 'tank1');
+    this.game = game;
+
+    this.tank = game.add.sprite(x, y, tankSprite, 'tank1');
     this.tank.anchor.setTo(0.5, 0.5);
     this.game.physics.arcade.enable(this.tank);
     this.tank.body.collideWorldBounds = true;
 
     // Attach the turret to the tank
-    this.tank.turret = game.add.sprite(0, 0, 'playerTank', 'turret');
+    this.tank.turret = game.add.sprite(0, 0, tankSprite, 'turret');
     this.tank.turret.anchor.setTo(0.3, 0.5);
 
     // Attach the shadow of the tank
-    this.tank.shadow = game.add.sprite(0, 0, 'playerTank', 'shadow');
+    this.tank.shadow = game.add.sprite(0, 0, tankSprite, 'shadow');
     this.tank.shadow.anchor.setTo(0.5, 0.5);
 
     // Bring the turret and the tank body to the front
@@ -33,14 +44,30 @@ var PlayerTank = function(x, y, game, cursors){
     this.bullets.setAll('outOfBoundsKill', true);
     this.bullets.setAll('checkWorldBounds', true);
 
-    // Other information
+    // Other information (default value)
     this.currentSpeed = 0;
-    this.coolDownTime = 500;
+    this.coolDownTime = 0;
     this.fireTime = 0;
+    this.tank.hp = 0;
+};
 
+/**
+ * PlayerTank class
+ * @param x
+ * @param y
+ * @param game
+ * @param tankSprite ('playerTank')
+ * @param cursors
+ * @constructor
+ */
+var PlayerTank = function(x, y, game, tankSprite, cursors){
+    Tank.apply(this, arguments);
+    this.cursors = cursors;
+    this.coolDownTime = 500;
     this.tank.hp = 10;
 };
 
+PlayerTank.prototype = Object.create(Tank);
 PlayerTank.prototype.update = function(){
     this.tank.turret.x = this.tank.x;
     this.tank.turret.y = this.tank.y;
@@ -78,7 +105,6 @@ PlayerTank.prototype.update = function(){
         }
     }
 };
-
 PlayerTank.prototype.fire = function(){
     if (this.bullets.countDead() > 0){
         // Group.getFirstExists(isExist)
@@ -90,41 +116,19 @@ PlayerTank.prototype.fire = function(){
     }
 };
 
-var EnemyTank = function(x, y, game, playerTank){
+/**
+ * EnemyTank class
+ * @param x
+ * @param y
+ * @param game
+ * @param tankSprite ('enemyTank')
+ * @param playerTank
+ * @constructor
+ */
+var EnemyTank = function(x, y, game, tankSprite, playerTank){
+    Tank.apply(this, arguments);
     this.playerTank = playerTank;
-    this.game = game;
-
-    this.tank = game.add.sprite(x, y, 'enemyTank', 'tank1');
-    this.tank.anchor.setTo(0.5, 0.5);
-    this.game.physics.arcade.enable(this.tank);
-    this.tank.body.collideWorldBounds = true;
-    this.tank.body.immovable = true;
-
-    // Attach the turret to the tank
-    this.tank.turret = game.add.sprite(0, 0, 'enemyTank', 'turret');
-    this.tank.turret.anchor.setTo(0.3, 0.5);
-
-    // Attach the shadow of the tank
-    this.tank.shadow = game.add.sprite(0, 0, 'enemyTank', 'shadow');
-    this.tank.shadow.anchor.setTo(0.5, 0.5);
-
-    // Bring the turret and the tank body to the front
-    this.tank.bringToTop();
-    this.tank.turret.bringToTop();
-
-    // Bullets
-    this.bullets = game.add.group();
-    this.bullets.createMultiple(30, 'bullet', 0, false); // quantity, key, frame, isExist
-    this.game.physics.arcade.enable(this.bullets);
-    this.bullets.setAll('anchor.x', 0.5);
-    this.bullets.setAll('anchor.y', 0.5);
-    this.bullets.setAll('outOfBoundsKill', true);
-    this.bullets.setAll('checkWorldBounds', true);
-
-    // Other information
-    this.currentSpeed = 0;
-    this.coolDownTime = 500;
-    this.fireTime = 0;
+    this.coolDownTime = 1000;
     this.tank.hp = 5;
 };
 
@@ -137,10 +141,9 @@ EnemyTank.prototype.update = function(){
     this.tank.turret.rotation = this.game.physics.arcade.angleBetween(this.tank, this.playerTank.tank);
 
     this.game.physics.arcade.collide(this.playerTank.tank, this.tank);
-    this.game.physics.arcade.overlap(this.playerTank.bullets, this.tank, this.getShotByPlayerTank, null, this);
+    this.game.physics.arcade.overlap(this.playerTank.bullets, this.tank, this.getShot, null, this);
 };
-
-EnemyTank.prototype.getShotByPlayerTank = function(tank, bullet){
+EnemyTank.prototype.getShot = function(tank, bullet){
     bullet.kill();
     tank.hp -= BULLET_DAMAGE;
     if (tank.hp <= 0){
@@ -174,18 +177,18 @@ function create(){
     game.physics.startSystem(Phaser.Physics.ARCADE);
 
     var land = game.add.tileSprite(0, 0, GAME_WIDTH, GAME_HEIGHT, 'earth');
-    //land.fixedToCamera = true;  // TODO what is this
+    //land.fixedToCamera = true;  // TODO XIN
 
     cursors = game.input.keyboard.createCursorKeys();
 
-    playerTank = new PlayerTank(game.world.centerX, game.world.centerY, game, cursors);
+    playerTank = new PlayerTank(game.world.centerX, game.world.centerY, game, 'playerTank', cursors);
 
     for (var i = 0; i < NUM_OF_ENEMY_TANKS; i++){
-        enemyTanks[i] = new EnemyTank(game.world.randomX, game.world.randomY, game, playerTank);
+        enemyTanks[i] = new EnemyTank(game.world.randomX, game.world.randomY, game, 'enemyTank', playerTank);
     }
 
     explosions = game.add.group();
-    for (var i = 0; i < NUM_OF_EXPLOSIONS; i++){
+    for (i = 0; i < NUM_OF_EXPLOSIONS; i++){
         var explosion = explosions.create(0, 0, 'explosion', 0, false);
         explosion.anchor.setTo(0.5, 0.5);
         explosion.animations.add('explode');
