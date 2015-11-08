@@ -85,7 +85,7 @@ PlayerTank.prototype.update = function(){
     }
     if (this.cursors.up.isDown){
         //  The speed we'll travel at
-        this.currentSpeed = 100;
+        this.currentSpeed = 200;
     }
     else
     {
@@ -129,7 +129,7 @@ var EnemyTank = function(x, y, game, tankSprite, playerTank){
     Tank.apply(this, arguments);
     this.playerTank = playerTank;
     this.coolDownTime = 1000;
-    this.tank.hp = 5;
+    this.tank.hp = 3;
 };
 
 EnemyTank.prototype.update = function(){
@@ -173,11 +173,10 @@ function preload(){
 }
 
 function create(){
-    //game.world.setBounds(-1000, -1000, 2000, 2000);
+    game.world.setBounds(-1000, -1000, 2000, 2000);
     game.physics.startSystem(Phaser.Physics.ARCADE);
 
-    var land = game.add.tileSprite(0, 0, GAME_WIDTH, GAME_HEIGHT, 'earth');
-    //land.fixedToCamera = true;  // TODO XIN
+    var land = game.add.tileSprite(-1000, -1000, 2000, 2000, 'earth');
 
     cursors = game.input.keyboard.createCursorKeys();
 
@@ -193,6 +192,8 @@ function create(){
         explosion.anchor.setTo(0.5, 0.5);
         explosion.animations.add('explode');
     }
+
+    game.camera.follow(playerTank.tank);
 }
 
 function update(){
