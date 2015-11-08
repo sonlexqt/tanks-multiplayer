@@ -180,7 +180,11 @@ function create(){
 
     cursors = game.input.keyboard.createCursorKeys();
 
-    playerTank = new PlayerTank(game.world.centerX, game.world.centerY, game, 'playerTank', cursors);
+    var playerTankInitialPos = {
+        x: game.world.randomX,
+        y: game.world.randomY
+    };
+    playerTank = new PlayerTank(playerTankInitialPos.x, playerTankInitialPos.y, game, 'playerTank', cursors);
 
     for (var i = 0; i < NUM_OF_ENEMY_TANKS; i++){
         enemyTanks[i] = new EnemyTank(game.world.randomX, game.world.randomY, game, 'enemyTank', playerTank);
@@ -194,6 +198,7 @@ function create(){
     }
 
     game.camera.follow(playerTank.tank);
+    game.camera.focusOnXY(playerTankInitialPos.x, playerTankInitialPos.y);
 }
 
 function update(){
