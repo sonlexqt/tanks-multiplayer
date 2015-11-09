@@ -1,7 +1,7 @@
 var GAME_WIDTH = 800;
 var GAME_HEIGHT = 600;
 
-game = new Phaser.Game(GAME_WIDTH, GAME_HEIGHT, Phaser.AUTO, 'tank-game', { preload: preload, create: create, update: update });
+game = new Phaser.Game(GAME_WIDTH, GAME_HEIGHT, Phaser.AUTO, 'tank-game', { preload: preload, create: eurecaClientSetup, update: update });
 
 /**
  * Abstract Tank class
@@ -158,18 +158,29 @@ EnemyTank.prototype.getShot = function(tank, bullet){
 
 var playerTank;
 var cursors;
-var NUM_OF_ENEMY_TANKS = 5;
+var NUM_OF_ENEMY_TANKS = 0; // TODO for multiplayer development
 var enemyTanks = [];
 var NUM_OF_EXPLOSIONS = 10;
 var explosions;
 var BULLET_DAMAGE = 1;
 
+var ready = false;
+var eurecaServer;
+function eurecaClientSetup(){
+    var eurecaClient = new Eureca.Client();
+    eurecaClient.ready(function (serverProxy){
+        eurecaServer = serverProxy;
+        create();
+        ready = true;
+    });
+}
+
 function preload(){
-    game.load.image('earth', '/assets/images/scorched_earth.png');
-    game.load.atlas('playerTank', '/assets/images/tanks.png', '/assets/images/tanks.json');
-    game.load.atlas('enemyTank', '/assets/images/enemy-tanks.png', '/assets/images/tanks.json');
-    game.load.image('bullet', '/assets/images/bullet.png');
-    game.load.spritesheet('explosion', '/assets/images/explosion.png', 64, 64, 23);
+    game.load.image('earth', '/public/assets/images/scorched_earth.png');
+    game.load.atlas('playerTank', '/public/assets/images/tanks.png', '/public/assets/images/tanks.json');
+    game.load.atlas('enemyTank', '/public/assets/images/enemy-tanks.png', '/public/assets/images/tanks.json');
+    game.load.image('bullet', '/public/assets/images/bullet.png');
+    game.load.spritesheet('explosion', '/public/assets/images/explosion.png', 64, 64, 23);
 }
 
 function create(){
@@ -202,6 +213,7 @@ function create(){
 }
 
 function update(){
+    if (!ready) return;
     playerTank.update();
     for (var i = 0; i < NUM_OF_ENEMY_TANKS; i++){
         enemyTanks[i].update();
