@@ -49,6 +49,13 @@ var Tank = function(x, y, game, tankSprite){
     this.coolDownTime = 0;
     this.fireTime = 0;
     this.tank.hp = 0;
+
+    // HIEU
+    this.rotateVelocity = 4;
+    this.moveVelocity = 4;
+    this.destinationList = [];
+    this.finalDestination = null;
+    this.path = null;
 };
 
 /**
@@ -65,6 +72,9 @@ var PlayerTank = function(x, y, game, tankSprite, cursors){
     this.cursors = cursors;
     this.coolDownTime = 500;
     this.tank.hp = 10;
+    this.mouseUpFlag = true;
+    this.moveComplete = true;
+    this.desireAngle = 0;
 };
 
 PlayerTank.prototype = Object.create(Tank);
@@ -75,34 +85,87 @@ PlayerTank.prototype.update = function(){
     this.tank.shadow.y = this.tank.y;
     this.tank.shadow.angle = this.tank.angle;
     this.tank.turret.rotation = this.game.physics.arcade.angleToPointer(this.tank.turret);
-
     // Controls handlers
     if (this.cursors.left.isDown){
-        this.tank.angle -= 4;
+        this.tank.angle -= this.rotateVelocity;
     }
     else if (this.cursors.right.isDown){
-        this.tank.angle += 4;
+        this.tank.angle += this.rotateVelocity;
+
     }
-    if (this.cursors.up.isDown){
-        //  The speed we'll travel at
-        this.currentSpeed = 200;
-    }
-    else
-    {
-        if (this.currentSpeed > 0)
-        {
-            this.currentSpeed -= 4;
+    //if (this.cursors.up.isDown){
+    //    //  The speed we'll travel at
+    //    this.currentSpeed = 100;
+    //}
+    //else
+    //{
+    //    if (this.currentSpeed > 0)
+    //    {
+    //        this.currentSpeed -= 4;
+    //    }
+    //}
+    //if (this.currentSpeed > 0)
+    //{
+    //    this.game.physics.arcade.velocityFromAngle(this.tank.angle, this.currentSpeed, this.tank.body.velocity);
+    //}
+    // Adjust angle
+    if (Math.abs(this.tank.angle - this.desireAngle) >= 5) {
+        var val1 = (this.desireAngle - this.tank.angle) / 10;
+        var val2 = (this.tank.angle - this.desireAngle) / 10;
+        if (Math.abs(val1) < Math.abs(val2)){
+            this.tank.angle += val1;
+        } else {
+            this.tank.angle -= val2;
         }
+    } else {
+        this.tank.angle = this.desireAngle;
     }
-    if (this.currentSpeed > 0)
-    {
-        this.game.physics.arcade.velocityFromAngle(this.tank.angle, this.currentSpeed, this.tank.body.velocity);
-    }
-    if (this.game.input.activePointer.isDown)
+    // Only fire on left click
+    if (this.game.input.activePointer.leftButton.isDown)
     {
         if (this.game.time.now - this.coolDownTime > this.fireTime){
             this.fire();
         }
+    }
+    // Set destination on right click
+    if (this.game.input.activePointer.rightButton.isDown && this.mouseUpFlag == true) {
+        this.mouseUpFlag = false;
+        var desx = Math.round(this.game.input.x + this.game.camera.position.x - GAME_WIDTH / 2);
+        var desy = Math.round(this.game.input.y + this.game.camera.position.y - GAME_HEIGHT / 2);
+        this.finalDestination = new Phaser.Point(desx, desy);
+        lineGraphics.clear();
+        var x = Math.round(this.tank.x);
+        var y = Math.round(this.tank.y);
+        this.path = graphUtil.getShortestPath(new Vertex(x, y, 'start'), new Vertex(this.finalDestination.x, this.finalDestination.y, 'end'));
+        //var path = graphUtil.getShortestPath(new Vertex(game.rnd.integerInRange(50, 750), game.rnd.integerInRange(50, 750), 'start'), new Vertex(game.rnd.integerInRange(50, 750), game.rnd.integerInRange(50, 750), 'end'))
+        drawPath(this.path, lineGraphics);
+        // Update flag
+        this.moveComplete = false
+        this.game.physics.arcade.moveToObject(this.tank, this.path[0].point, 120);
+        console.log("mouse " + this.game.input.x + " - " + this.game.input.y);
+        console.log("camera " + this.game.camera.position);
+        console.log("tank " + this.tank.position);
+        console.log("final des " + this.finalDestination);
+    }
+    if (this.game.input.activePointer.rightButton.isUp && this.mouseUpFlag == false) {
+        this.mouseUpFlag = true;
+    }
+    // reset moveComplete flag
+    if ( this.finalDestination != null && this.finalDestination.distance(new Phaser.Point(this.tank.x, this.tank.y)) <= 3) {
+        this.moveComplete = true;
+    }
+    if (this.moveComplete && this.finalDestination != null) {
+        this.finalDestination = null;
+        this.tank.body.velocity.set(0, 0);
+        //console.log("finish");
+    }
+
+    if (this.path && this.path.length > 0 && this.path[0].point.distance(new Phaser.Point(this.tank.x, this.tank.y)) <= 3){
+        this.path.shift();
+    }
+    if (this.path && this.path.length > 0){
+        this.game.physics.arcade.moveToObject(this.tank, this.path[0].point, 120);
+        this.desireAngle = Phaser.Point.angle(new Phaser.Point(this.tank.x, this.tank.y), this.path[0].point) * 180 / Math.PI;
     }
 };
 PlayerTank.prototype.fire = function(){
@@ -158,11 +221,17 @@ EnemyTank.prototype.getShot = function(tank, bullet){
 
 var playerTank;
 var cursors;
+var mouse;
 var NUM_OF_ENEMY_TANKS = 0; // TODO for multiplayer development
 var enemyTanks = [];
 var NUM_OF_EXPLOSIONS = 10;
 var explosions;
 var BULLET_DAMAGE = 1;
+//TODO remove after finish
+var lineGraphics;
+var graphics;
+var obstacleList;
+var graphUtil;
 
 var ready = false;
 var eurecaServer;
@@ -191,11 +260,15 @@ function create(){
 
     cursors = game.input.keyboard.createCursorKeys();
 
+    mouse = game.input.mouse;
+
+    playerTank = new PlayerTank(game.world.centerX, game.world.centerY, game, 'playerTank', cursors);
+
+
     var playerTankInitialPos = {
         x: game.world.randomX,
         y: game.world.randomY
     };
-    playerTank = new PlayerTank(playerTankInitialPos.x, playerTankInitialPos.y, game, 'playerTank', cursors);
 
     for (var i = 0; i < NUM_OF_ENEMY_TANKS; i++){
         enemyTanks[i] = new EnemyTank(game.world.randomX, game.world.randomY, game, 'enemyTank', playerTank);
@@ -207,6 +280,17 @@ function create(){
         explosion.anchor.setTo(0.5, 0.5);
         explosion.animations.add('explode');
     }
+    // Disable deault right click handler
+    game.canvas.oncontextmenu = function (e) { e.preventDefault(); }
+    // Obstacle
+    lineGraphics = game.add.graphics(0, 0);
+    graphics = game.add.graphics(0, 0);
+    generateTiles(graphics);
+    obstacleList = Data.generateObstacle();
+    for (var obs = 0; obs < obstacleList.length; obs++) {
+        obstacleList[obs].draw(graphics);
+    }
+    graphUtil = new GraphUtils(obstacleList);
 
     game.camera.follow(playerTank.tank);
     game.camera.focusOnXY(playerTankInitialPos.x, playerTankInitialPos.y);
@@ -220,4 +304,31 @@ function update(){
     }
     console.log('> playerTank\'s position:');
     console.log('x: ' + playerTank.tank.x + ' - y: ' + playerTank.tank.y);
+}
+
+function drawPath(path, graphics) {
+    graphics.lineStyle(3, 0xFF0000, 1);
+    graphics.beginFill(0xFF0000, 3);
+    for (var vert = 0; vert < path.length - 1; vert++) {
+        graphics.moveTo(path[vert].x, path[vert].y);
+        graphics.lineTo(path[vert + 1].x, path[vert + 1].y);
+    }
+    graphics.endFill();
+}
+function generateTiles(graphics) {
+    var tileStep = 40;
+    //Draw tile from left to right, from top to down
+    graphics.lineStyle(1, 0x0000FF, 1);
+    for (var y = 0; y < GAME_HEIGHT; y += tileStep) {
+        for (var x = 0; x < GAME_WIDTH; x += tileStep) {
+            graphics.drawRect(x, y, tileStep, tileStep);
+        }
+    }
+    //graphics.beginFill(0xFFFF0B, 1);
+    //graphics.drawCircle(GAME_WIDTH / 2, GAME_HEIGHT / 2 - 20, 20);
+    //graphics.drawCircle(endx, endy, 10);
+    //graphics.drawCircle(startx, starty, 10);
+    //graphics.moveTo(startx, starty);
+    //graphics.lineTo(endx, endy);
+    //graphics.endFill();
 }
