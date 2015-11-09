@@ -1,5 +1,5 @@
-var GAME_WIDTH = 800;
-var GAME_HEIGHT = 600;
+var GAME_WIDTH = window.innerWidth;
+var GAME_HEIGHT = window.innerHeight;
 
 var playerTank;
 var playerTankId = 0;
@@ -272,7 +272,6 @@ function create(){
     game.physics.startSystem(Phaser.Physics.ARCADE);
 
     var land = game.add.tileSprite(Data.MAP_DATA.startx, Data.MAP_DATA.starty, Data.MAP_DATA.width, Data.MAP_DATA.height, 'earth');
-    //land.fixedToCamera = true;  // TODO XIN
 
     cursors = game.input.keyboard.createCursorKeys();
 
@@ -282,7 +281,6 @@ function create(){
         x: game.world.randomX,
         y: game.world.randomY
     };
-    //playerTank = new PlayerTank(game.world.centerX, game.world.centerY, game, 'playerTank', cursors);
 
     playerTank = new PlayerTank(playerTankId, playerTankInitialPos.x, playerTankInitialPos.y, game, 'playerTank', cursors);
     tanksList[playerTankId] = playerTank;
