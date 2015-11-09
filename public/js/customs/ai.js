@@ -24,7 +24,7 @@ var Obstacle = function (vertexList) {
 };
 
 Obstacle.prototype.draw = function (graphics) {
-    graphics.beginFill(0xFF33ff);
+    graphics.beginFill(0xFF33ff, 0.5);
     graphics.drawPolygon(this.polygon);
     graphics.endFill();
 };
@@ -92,7 +92,7 @@ GraphUtils.prototype.getCrossObstacles = function (startPoint, endPoint) {
     var crossObstacles = [];
     // Loop through obstacle list
     for (var i = 0; i < this.obstaclesList.length; i++) {
-        if (GraphUtils.isCrossOver(startPoint, endPoint, this.obstaclesList[i])) {
+        if (GraphUtils.isCrossOver(startPoint, endPoint, this.obstaclesList[i]).value) {
             crossObstacles.push(this.obstaclesList[i]);
         }
     }
@@ -156,17 +156,19 @@ GraphUtils._isCrossOver = function (startPoint, endPoint, obstacle) {
                 }
             }
         }
-        return (crosspoints['num'] >= 2);
-    }
-    return false;
-};
-GraphUtils.isCrossOver = function (startPoint, endPoint, obstacle) {
-    if (GraphUtils._isCrossOver(startPoint, endPoint, obstacle)) {
-        // Loop through obstacle edges to find out if it real intersect with line
-        for (var i = 0; i < obstacle.vertexList.length; i++) {
-            //TODO
+        if (crosspoints['num'] >= 2) {
+            return {'value': true, 'crosspoints': crosspoints};
         }
     }
+    return {'value': false, 'crosspoints': null};
+};
+GraphUtils.isCrossOver = function (startPoint, endPoint, obstacle) {
+    //if (GraphUtils._isCrossOver(startPoint, endPoint, obstacle).value) {
+    //    // Loop through obstacle edges to find out if it real intersect with line
+    //    for (var i = 0; i < obstacle.vertexList.length; i++) {
+    //        //TODO
+    //    }
+    //}
     return GraphUtils._isCrossOver(startPoint, endPoint, obstacle);
 };
 GraphUtils.prototype.getEdgesList = function () {
@@ -181,8 +183,44 @@ GraphUtils.prototype.getShortestPath = function (startPoint, endPoint) {
     var path = [];
     var graph = new Graph();
     var crossoverObstacle = this.getCrossObstacles(startPoint, endPoint);
+    // crossoverObstacle.length - 1 is the index of endpoint (as an obstacle)
+    // check if endpoint is in the obstacle -> adjust
+    var closestValidDestination;
+    for (var obs = 0; obs < this.obstaclesList.length; obs++) {
+        if (GraphUtils.isAPointinAPolygon(endPoint.point, this.obstaclesList[obs].polygon)) {
+            console.log("inside");
+            closestValidDestination = GraphUtils.getClosestValidDestination(endPoint.point, this.obstaclesList[obs]);
+
+            // Adjust
+            var offset = 5;
+            var case1 = new Phaser.Point(closestValidDestination.x + offset, closestValidDestination.y);
+            var case2 = new Phaser.Point(closestValidDestination.x - offset, closestValidDestination.y);
+            var case3 = new Phaser.Point(closestValidDestination.x, closestValidDestination.y + offset);
+            var case4 = new Phaser.Point(closestValidDestination.x, closestValidDestination.y - offset);
+
+            var cases = [case1, case2, case3, case4];
+            for (var c = 0; c < cases.length; c++) {
+                if (!GraphUtils.isAPointinAPolygon(cases[c], this.obstaclesList[obs].polygon)) {
+                    closestValidDestination = cases[c];
+                    break;
+                }
+            }
+            console.log('closest' + closestValidDestination);
+            crossoverObstacle = this.getCrossObstacles(startPoint, new Vertex(closestValidDestination.x, closestValidDestination.y, 'end'));
+            break;
+        }
+    }
+    //if (closestValidDestination) {
+    //    crossoverObstacle.pop();
+    //    crossoverObstacle.push(new Obstacle([new Vertex(closestValidDestination.x, closestValidDestination.y - 10, 'end')]));
+    //} else {
+    //
+    //}
+    console.log(crossoverObstacle);
+
     if (crossoverObstacle.length == 0) {
         return [startPoint, endPoint];
+        console.log('bang khonog');
     } else {
         //TODO
     }
@@ -198,10 +236,16 @@ GraphUtils.prototype.getShortestPath = function (startPoint, endPoint) {
     for (var vert = 1; vert < result.length - 1; vert++) {
         path.push(Data.vertexData[result[vert]]);
     }
-    path.push(endPoint);
+    if (closestValidDestination) {
+        path.push(new Vertex(closestValidDestination.x, closestValidDestination.y, 'end'));
+        return {'path': path, 'des': closestValidDestination};
+    } else {
+        path.push(endPoint);
+        return {'path': path, 'des': endPoint.point};
+    }
     //console.log(graph);
-    return path;
-};
+}
+;
 /**
  * Generate all the edges and vertices for the graph
  * @param graph - the graph hold all data
@@ -236,7 +280,7 @@ GraphUtils.connect = function (from, to, graph, obstacle, allObstacle) {
             // Loop through all the crossover obstacle to check if there is any collision
             var isCollision = false;
             for (var obs = 0; obs < allObstacle.length; obs++) {
-                if (GraphUtils.isCrossOver(fromObs.vertexList[fromVert], toObs.vertexList[toVert], allObstacle[obs])) {
+                if (GraphUtils.isCrossOver(fromObs.vertexList[fromVert], toObs.vertexList[toVert], allObstacle[obs]).value) {
                     isCollision = true;
                     break;
                 }
@@ -322,6 +366,64 @@ GraphUtils.connectEdgesOfObstacle = function (obstacle, graph) {
             graph.addEdgeToVertex(point2.key, point1.key, dis);
         }
     }
+};
+
+GraphUtils.isAPointinAPolygon = function (currentPoint, polygon) {
+    //Ray-cast algorithm is here onward
+    var k, j = polygon.points.length - 1;
+    var oddNodes = false; //to check whether number of intersections is odd
+    for (k = 0; k < polygon.points.length; k++) {
+        //fetch adjucent points of the polygon
+        var polyK = polygon.points[k];
+        var polyJ = polygon.points[j];
+
+        //check the intersections
+        if (((polyK.y > currentPoint.y) != (polyJ.y > currentPoint.y)) &&
+            (currentPoint.x < (polyJ.x - polyK.x) * (currentPoint.y - polyK.y) / (polyJ.y - polyK.y) + polyK.x))
+            oddNodes = !oddNodes; //switch between odd and even
+        j = k;
+    }
+
+    //if odd number of intersections
+    return (oddNodes);
+};
+
+GraphUtils.reflexOfAPointInALine = function (point, line) {
+    var a = point.x;
+    var b = point.y;
+    var A = line.A;
+    var B = line.B;
+    var C = line.C;
+    var t = (C - A * a - B * b) / (A * A + B * B);
+    var x = Math.round(a + A * t);
+    var y = Math.round(b + B * t);
+    return new Phaser.Point(x, y);
+};
+GraphUtils.getClosestValidDestination = function (insidePoint, obstacle) {
+
+    var lines = [];
+    for (var vert = 0; vert < obstacle.vertexList.length; vert++) {
+        var point1 = obstacle.vertexList[vert].point;
+        var point2 = obstacle.vertexList[(vert + 1) % obstacle.vertexList.length].point;
+
+        lines.push(GraphUtils.getLineObject(point1, point2));
+    }
+
+    var reflectPoints = [];
+    for (var line = 0; line < lines.length; line++) {
+        reflectPoints.push(GraphUtils.reflexOfAPointInALine(insidePoint, lines[line]));
+    }
+
+    var minDistance = Infinity;
+    var result = null;
+    for (var p = 0; p < reflectPoints.length; p++) {
+        var dis = insidePoint.distance(reflectPoints[p]);
+        if (dis < minDistance) {
+            result = reflectPoints[p];
+            minDistance = dis;
+        }
+    }
+    return result;
 };
 /////////////////////////////////////////////////////////////////////////////////////////
 

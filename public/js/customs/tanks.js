@@ -165,8 +165,10 @@ PlayerTank.prototype.update = function(){
         lineGraphics.clear();
         var x = Math.round(this.tank.x);
         var y = Math.round(this.tank.y);
-        this.path = graphUtil.getShortestPath(new Vertex(x, y, 'start'), new Vertex(this.finalDestination.x, this.finalDestination.y, 'end'));
+        var calculatePath = graphUtil.getShortestPath(new Vertex(x, y, 'start'), new Vertex(this.finalDestination.x, this.finalDestination.y, 'end'));
+        this.path = calculatePath.path;
         drawPath(this.path, lineGraphics);
+        this.finalDestination = calculatePath.des;
         // Update flag
         this.moveComplete = false;
         this.game.physics.arcade.moveToObject(this.tank, this.path[0].point, 120);
@@ -174,6 +176,7 @@ PlayerTank.prototype.update = function(){
         console.log("camera " + this.game.camera.position);
         console.log("tank " + this.tank.position);
         console.log("final des " + this.finalDestination);
+        console.log(this.path);
     }
     if (this.game.input.activePointer.rightButton.isUp && this.mouseUpFlag == false) {
         this.mouseUpFlag = true;
