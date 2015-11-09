@@ -7,6 +7,7 @@
 var app = require('../app');
 var debug = require('debug')('tanks:server');
 var http = require('http');
+var eureca = require('eureca.io');
 
 /**
  * Get port from environment and store in Express.
@@ -20,6 +21,24 @@ app.set('port', port);
  */
 
 var server = http.createServer(app);
+
+var EurecaServer = eureca.EurecaServer;
+
+// Create an instance of EurecaServer
+var eurecaServer = new EurecaServer();
+
+// Attach eureca.io to our http server
+eurecaServer.attach(server);
+
+// Detect client connection
+eurecaServer.onConnect(function (conn) {
+  console.log('New Client id=%s ', conn.id, conn.remoteAddress);
+});
+
+// Detect client disconnection
+eurecaServer.onDisconnect(function (conn) {
+  console.log('Client disconnected ', conn.id);
+});
 
 /**
  * Listen on provided port, on all network interfaces.
