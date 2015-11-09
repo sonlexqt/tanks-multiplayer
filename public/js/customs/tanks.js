@@ -251,10 +251,10 @@ function preload(){
 }
 
 function create(){
-    game.world.setBounds(-1000, -1000, 2059, 2070);
+    game.world.setBounds(Data.MAP_DATA.startx, Data.MAP_DATA.starty, Data.MAP_DATA.width, Data.MAP_DATA.height);
     game.physics.startSystem(Phaser.Physics.ARCADE);
 
-    var land = game.add.tileSprite(-1000, -1000, 2059, 2070, 'earth');
+    var land = game.add.tileSprite(Data.MAP_DATA.startx, Data.MAP_DATA.starty, Data.MAP_DATA.width, Data.MAP_DATA.height, 'earth');
     //land.fixedToCamera = true;  // TODO XIN
 
     cursors = game.input.keyboard.createCursorKeys();
@@ -281,10 +281,12 @@ function create(){
     // Obstacle
     lineGraphics = game.add.graphics(0, 0);
     graphics = game.add.graphics(0, 0);
-    generateTiles(graphics);
     obstacleList = Data.generateObstacle();
-    for (var obs = 0; obs < obstacleList.length; obs++) {
-        obstacleList[obs].draw(graphics);
+    if (Data.DEBUG){
+        for (var obs = 0; obs < obstacleList.length; obs++) {
+            obstacleList[obs].draw(graphics);
+        }
+        drawGrid(graphics);
     }
     graphUtil = new GraphUtils(obstacleList);
 
@@ -312,12 +314,12 @@ function drawPath(path, graphics) {
     graphics.endFill();
 }
 
-function generateTiles(graphics) {
+function drawGrid(graphics) {
     var tileStep = 40;
     //Draw tile from left to right, from top to down
     graphics.lineStyle(1, 0x0000FF, 1);
-    for (var y = 0; y < GAME_HEIGHT; y += tileStep) {
-        for (var x = 0; x < GAME_WIDTH; x += tileStep) {
+    for (var y = Data.MAP_DATA.starty; y < Data.MAP_DATA.height; y += tileStep) {
+        for (var x = Data.MAP_DATA.startx; x < Data.MAP_DATA.width; x += tileStep) {
             graphics.drawRect(x, y, tileStep, tileStep);
         }
     }
