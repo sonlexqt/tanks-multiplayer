@@ -18,14 +18,14 @@ var Tank = function(x, y, game, tankSprite){
 
     this.game = game;
 
-    this.tank = game.add.sprite(x, y, tankSprite, 'tank1');
+    this.tank = game.add.sprite(x, y, tankSprite, 'red_tank');
     this.tank.anchor.setTo(0.5, 0.5);
     this.game.physics.arcade.enable(this.tank);
     this.tank.body.collideWorldBounds = true;
 
     // Attach the turret to the tank
-    this.tank.turret = game.add.sprite(0, 0, tankSprite, 'turret');
-    this.tank.turret.anchor.setTo(0.3, 0.5);
+    this.tank.turret = game.add.sprite(0, 0, tankSprite, 'red_tank_turret');
+    this.tank.turret.anchor.setTo(0.25, 0.5);
 
     // Attach the shadow of the tank
     this.tank.shadow = game.add.sprite(0, 0, tankSprite, 'shadow');
@@ -245,31 +245,31 @@ function eurecaClientSetup(){
 }
 
 function preload(){
-    game.load.image('earth', '/public/assets/images/scorched_earth.png');
-    game.load.atlas('playerTank', '/public/assets/images/tanks.png', '/public/assets/images/tanks.json');
+    //game.load.image('earth', '/public/assets/images/scorched_earth.png');
+    game.load.image('earth', '/public/assets/images/tank_map.png');
+    //game.load.atlas('playerTank', '/public/assets/images/tanks.png', '/public/assets/images/tanks.json');
     game.load.atlas('enemyTank', '/public/assets/images/enemy-tanks.png', '/public/assets/images/tanks.json');
+    game.load.atlas('playerTank', '/public/assets/images/tank_sprite.png', '/public/assets/images/tanks_sprite.json');
+    //game.load.atlas('enemyTank', '/public/assets/images/tank_sprite.png', '/public/assets/images/tanks.json');
     game.load.image('bullet', '/public/assets/images/bullet.png');
     game.load.spritesheet('explosion', '/public/assets/images/explosion.png', 64, 64, 23);
 }
 
 function create(){
-    game.world.setBounds(-1000, -1000, 2000, 2000);
+    game.world.setBounds(-1000, -1000, 2059, 2070);
     game.physics.startSystem(Phaser.Physics.ARCADE);
 
-    var land = game.add.tileSprite(0, 0, GAME_WIDTH, GAME_HEIGHT, 'earth');
+    var land = game.add.tileSprite(-1000, -1000, 2059, 2070, 'earth');
     //land.fixedToCamera = true;  // TODO XIN
 
     cursors = game.input.keyboard.createCursorKeys();
 
     mouse = game.input.mouse;
-
-    playerTank = new PlayerTank(game.world.centerX, game.world.centerY, game, 'playerTank', cursors);
-
-
     var playerTankInitialPos = {
         x: game.world.randomX,
         y: game.world.randomY
     };
+    playerTank = new PlayerTank(game.world.centerX, game.world.centerY, game, 'playerTank', cursors);
 
     for (var i = 0; i < NUM_OF_ENEMY_TANKS; i++){
         enemyTanks[i] = new EnemyTank(game.world.randomX, game.world.randomY, game, 'enemyTank', playerTank);
