@@ -1,7 +1,7 @@
 var GAME_WIDTH = 800;
 var GAME_HEIGHT = 600;
 
-game = new Phaser.Game(GAME_WIDTH, GAME_HEIGHT, Phaser.AUTO, 'tank-game', { preload: preload, create: create, update: update });
+game = new Phaser.Game(GAME_WIDTH, GAME_HEIGHT, Phaser.AUTO, 'tank-game', { preload: preload, create: eurecaClientSetup, update: update });
 
 /**
  * Abstract Tank class
@@ -67,7 +67,7 @@ var Tank = function(x, y, game, tankSprite){
  * @param cursors
  * @constructor
  */
-var PlayerTank = function(x, y, game, tankSprite, cursors, mouse){
+var PlayerTank = function(x, y, game, tankSprite, cursors){
     Tank.apply(this, arguments);
     this.cursors = cursors;
     this.coolDownTime = 500;
@@ -91,6 +91,7 @@ PlayerTank.prototype.update = function(){
     }
     else if (this.cursors.right.isDown){
         this.tank.angle += this.rotateVelocity;
+
     }
     //if (this.cursors.up.isDown){
     //    //  The speed we'll travel at
@@ -129,10 +130,10 @@ PlayerTank.prototype.update = function(){
     // Set destination on right click
     if (this.game.input.activePointer.rightButton.isDown && this.mouseUpFlag == true) {
         this.mouseUpFlag = false;
-        this.finalDestination = new Phaser.Point(Math.round(this.game.input.x), Math.round(this.game.input.y));
+        var desx = Math.round(this.game.input.x + this.game.camera.position.x - GAME_WIDTH / 2);
+        var desy = Math.round(this.game.input.y + this.game.camera.position.y - GAME_HEIGHT / 2);
+        this.finalDestination = new Phaser.Point(desx, desy);
         lineGraphics.clear();
-        //console.log("tank pos (" + this.tank.x + ", " + this.tank.y + ")");
-        //console.log("new pos (" + this.finalDestination.x + ", " + this.finalDestination.y + ")");
         var x = Math.round(this.tank.x);
         var y = Math.round(this.tank.y);
         this.path = graphUtil.getShortestPath(new Vertex(x, y, 'start'), new Vertex(this.finalDestination.x, this.finalDestination.y, 'end'));
@@ -141,6 +142,10 @@ PlayerTank.prototype.update = function(){
         // Update flag
         this.moveComplete = false
         this.game.physics.arcade.moveToObject(this.tank, this.path[0].point, 120);
+        console.log("mouse " + this.game.input.x + " - " + this.game.input.y);
+        console.log("camera " + this.game.camera.position);
+        console.log("tank " + this.tank.position);
+        console.log("final des " + this.finalDestination);
     }
     if (this.game.input.activePointer.rightButton.isUp && this.mouseUpFlag == false) {
         this.mouseUpFlag = true;
@@ -187,7 +192,7 @@ var EnemyTank = function(x, y, game, tankSprite, playerTank){
     Tank.apply(this, arguments);
     this.playerTank = playerTank;
     this.coolDownTime = 1000;
-    this.tank.hp = 5;
+    this.tank.hp = 3;
 };
 
 EnemyTank.prototype.update = function(){
@@ -217,7 +222,7 @@ EnemyTank.prototype.getShot = function(tank, bullet){
 var playerTank;
 var cursors;
 var mouse;
-var NUM_OF_ENEMY_TANKS = 5;
+var NUM_OF_ENEMY_TANKS = 0; // TODO for multiplayer development
 var enemyTanks = [];
 var NUM_OF_EXPLOSIONS = 10;
 var explosions;
@@ -227,19 +232,29 @@ var lineGraphics;
 var graphics;
 var obstacleList;
 var graphUtil;
+
+var ready = false;
+var eurecaServer;
+function eurecaClientSetup(){
+    var eurecaClient = new Eureca.Client();
+    eurecaClient.ready(function (serverProxy){
+        eurecaServer = serverProxy;
+        create();
+        ready = true;
+    });
+}
+
 function preload(){
-    game.load.image('earth', '/assets/images/scorched_earth.png');
-    game.load.atlas('playerTank', '/assets/images/tanks.png', '/assets/images/tanks.json');
-    game.load.atlas('enemyTank', '/assets/images/enemy-tanks.png', '/assets/images/tanks.json');
-    game.load.image('bullet', '/assets/images/bullet.png');
-    game.load.spritesheet('explosion', '/assets/images/explosion.png', 64, 64, 23);
+    game.load.image('earth', '/public/assets/images/scorched_earth.png');
+    game.load.atlas('playerTank', '/public/assets/images/tanks.png', '/public/assets/images/tanks.json');
+    game.load.atlas('enemyTank', '/public/assets/images/enemy-tanks.png', '/public/assets/images/tanks.json');
+    game.load.image('bullet', '/public/assets/images/bullet.png');
+    game.load.spritesheet('explosion', '/public/assets/images/explosion.png', 64, 64, 23);
 }
 
 function create(){
-    //game.world.setBounds(-1000, -1000, 2000, 2000);
+    game.world.setBounds(-1000, -1000, 2000, 2000);
     game.physics.startSystem(Phaser.Physics.ARCADE);
-
-
 
     var land = game.add.tileSprite(0, 0, GAME_WIDTH, GAME_HEIGHT, 'earth');
     //land.fixedToCamera = true;  // TODO XIN
@@ -248,7 +263,13 @@ function create(){
 
     mouse = game.input.mouse;
 
-    playerTank = new PlayerTank(game.world.centerX, game.world.centerY, game, 'playerTank', cursors, mouse);
+    playerTank = new PlayerTank(game.world.centerX, game.world.centerY, game, 'playerTank', cursors);
+
+
+    var playerTankInitialPos = {
+        x: game.world.randomX,
+        y: game.world.randomY
+    };
 
     for (var i = 0; i < NUM_OF_ENEMY_TANKS; i++){
         enemyTanks[i] = new EnemyTank(game.world.randomX, game.world.randomY, game, 'enemyTank', playerTank);
@@ -271,9 +292,14 @@ function create(){
         obstacleList[obs].draw(graphics);
     }
     graphUtil = new GraphUtils(obstacleList);
+
+    game.camera.follow(playerTank.tank);
+    //game.camera.position = new Phaser.Point(0, 0);
+    game.camera.focusOnXY(playerTankInitialPos.x, playerTankInitialPos.y);
 }
 
 function update(){
+    if (!ready) return;
     playerTank.update();
     for (var i = 0; i < NUM_OF_ENEMY_TANKS; i++){
         enemyTanks[i].update();
