@@ -1351,7 +1351,7 @@ function Narrowphase(){
      * Enable reduction of friction equations. If disabled, a box on a plane will generate 2 contact equations and 2 friction equations. If enabled, there will be only one friction equation. Same kind of simplifications are made  for all collision types.
      * @property enableFrictionReduction
      * @type {Boolean}
-     * @deprecated This flag will be removed when the feature is stable enough.
+     * @deprecated This mouseUpFlag will be removed when the feature is stable enough.
      * @default true
      */
     this.enableFrictionReduction = true;
@@ -6732,7 +6732,7 @@ Material.idCounter = 0;
 
             if(isc)
             {
-                isc.flag = true;
+                isc.mouseUpFlag = true;
                 iscs.push(isc);
                 ps.splice(i+1,0,isc);
                 i++;
@@ -6768,7 +6768,7 @@ Material.idCounter = 0;
                 var pgn = PolyK._getPoints(ps, ind0, ind1);
                 pgs.push(pgn);
                 ps = PolyK._getPoints(ps, ind1, ind0);
-                i0.flag = i1.flag = false;
+                i0.mouseUpFlag = i1.mouseUpFlag = false;
                 iscs.splice(0,2);
                 if(iscs.length == 0) pgs.push(ps);
             }
@@ -6913,7 +6913,7 @@ Material.idCounter = 0;
         while(true)
         {
             ind = (ind+1)%n;
-            if(ps[ind].flag) return ind;
+            if(ps[ind].mouseUpFlag) return ind;
         }
     }
     */
@@ -7001,7 +7001,7 @@ Material.idCounter = 0;
     {
         this.x = x;
         this.y = y;
-        this.flag = false;
+        this.mouseUpFlag = false;
     }
     PolyK._P.prototype.toString = function()
     {
@@ -13968,7 +13968,7 @@ PIXI.DisplayObject = function()
     this._mask = null;
 
     /**
-     * Cached internal flag.
+     * Cached internal mouseUpFlag.
      *
      * @property _cacheAsBitmap
      * @type Boolean
@@ -13977,7 +13977,7 @@ PIXI.DisplayObject = function()
     this._cacheAsBitmap = false;
 
     /**
-     * Cached internal flag.
+     * Cached internal mouseUpFlag.
      *
      * @property _cacheIsDirty
      * @type Boolean
@@ -16148,7 +16148,7 @@ PIXI.PixiShader = function(gl)
     this.textureCount = 0;
 
     /**
-     * A local flag
+     * A local mouseUpFlag
      * @property firstRun
      * @type Boolean
      * @private
@@ -16156,7 +16156,7 @@ PIXI.PixiShader = function(gl)
     this.firstRun = true;
 
     /**
-     * A dirty flag
+     * A dirty mouseUpFlag
      * @property dirty
      * @type Boolean
      */
@@ -17064,7 +17064,7 @@ PIXI.WebGLRenderer = function(game) {
     this.autoResize = false;
 
     /**
-     * The value of the preserveDrawingBuffer flag affects whether or not the contents of the stencil buffer is retained after rendering.
+     * The value of the preserveDrawingBuffer mouseUpFlag affects whether or not the contents of the stencil buffer is retained after rendering.
      *
      * @property preserveDrawingBuffer
      * @type Boolean
@@ -20143,7 +20143,7 @@ PIXI.CanvasRenderer = function (game) {
     this.context = this.view.getContext("2d", { alpha: this.transparent } );
 
     /**
-     * Boolean flag controlling canvas refresh.
+     * Boolean mouseUpFlag controlling canvas refresh.
      *
      * @property refresh
      * @type Boolean
@@ -30322,31 +30322,31 @@ Phaser.Plugin = function (game, parent) {
     this.visible = false;
 
     /**
-    * @property {boolean} hasPreUpdate - A flag to indicate if this plugin has a preUpdate method.
+    * @property {boolean} hasPreUpdate - A mouseUpFlag to indicate if this plugin has a preUpdate method.
     * @default
     */
     this.hasPreUpdate = false;
 
     /**
-    * @property {boolean} hasUpdate - A flag to indicate if this plugin has an update method.
+    * @property {boolean} hasUpdate - A mouseUpFlag to indicate if this plugin has an update method.
     * @default
     */
     this.hasUpdate = false;
 
     /**
-    * @property {boolean} hasPostUpdate - A flag to indicate if this plugin has a postUpdate method.
+    * @property {boolean} hasPostUpdate - A mouseUpFlag to indicate if this plugin has a postUpdate method.
     * @default
     */
     this.hasPostUpdate = false;
 
     /**
-    * @property {boolean} hasRender - A flag to indicate if this plugin has a render method.
+    * @property {boolean} hasRender - A mouseUpFlag to indicate if this plugin has a render method.
     * @default
     */
     this.hasRender = false;
 
     /**
-    * @property {boolean} hasPostRender - A flag to indicate if this plugin has a postRender method.
+    * @property {boolean} hasPostRender - A mouseUpFlag to indicate if this plugin has a postRender method.
     * @default
     */
     this.hasPostRender = false;
@@ -31219,7 +31219,7 @@ Phaser.Group = function (game, parent, name, addToStage, enableBody, physicsBody
     /**
     * A Group is that has `pendingDestroy` set to `true` is flagged to have its destroy method 
     * called on the next logic update.
-    * You can set it directly to flag the Group to be destroyed on its next update.
+    * You can set it directly to mouseUpFlag the Group to be destroyed on its next update.
     * 
     * This is extremely useful if you wish to destroy a Group from within one of its own callbacks 
     * or a callback of one of its children.
@@ -33881,7 +33881,7 @@ Phaser.Game = function (width, height, renderer, parent, state, transparent, ant
     this.antialias = true;
 
     /**
-    * @property {boolean} preserveDrawingBuffer - The value of the preserveDrawingBuffer flag affects whether or not the contents of the stencil buffer is retained after rendering.
+    * @property {boolean} preserveDrawingBuffer - The value of the preserveDrawingBuffer mouseUpFlag affects whether or not the contents of the stencil buffer is retained after rendering.
     * @default
     */
     this.preserveDrawingBuffer = false;
@@ -39217,7 +39217,7 @@ Phaser.InputHandler = function (sprite) {
     this.enabled = false;
 
     /**
-    * @property {boolean} checked - A disposable flag used by the Pointer class when performing priority checks.
+    * @property {boolean} checked - A disposable mouseUpFlag used by the Pointer class when performing priority checks.
     * @protected
     */
     this.checked = false;
@@ -39860,7 +39860,7 @@ Phaser.InputHandler.prototype = {
 
     /**
     * Checks if the given pointer is both down and over the Sprite this InputHandler belongs to.
-    * Use the `fastTest` flag is to quickly check just the bounding hit area even if `InputHandler.pixelPerfectOver` is `true`.
+    * Use the `fastTest` mouseUpFlag is to quickly check just the bounding hit area even if `InputHandler.pixelPerfectOver` is `true`.
     *
     * @method Phaser.InputHandler#checkPointerDown
     * @param {Phaser.Pointer} pointer
@@ -39898,7 +39898,7 @@ Phaser.InputHandler.prototype = {
 
     /**
     * Checks if the given pointer is over the Sprite this InputHandler belongs to.
-    * Use the `fastTest` flag is to quickly check just the bounding hit area even if `InputHandler.pixelPerfectOver` is `true`.
+    * Use the `fastTest` mouseUpFlag is to quickly check just the bounding hit area even if `InputHandler.pixelPerfectOver` is `true`.
     *
     * @method Phaser.InputHandler#checkPointerOver
     * @param {Phaser.Pointer} pointer
@@ -40833,7 +40833,7 @@ Phaser.Gamepad = function (game) {
     this._rawPads = [];
 
     /**
-    * @property {boolean} _active - Private flag for whether or not the API is polled
+    * @property {boolean} _active - Private mouseUpFlag for whether or not the API is polled
     * @private
     * @default
     */
@@ -43763,7 +43763,7 @@ Phaser.Component.Core.prototype = {
     world: null,
 
     /**
-    * A debug flag designed for use with `Game.enableStep`.
+    * A debug mouseUpFlag designed for use with `Game.enableStep`.
     * @property {boolean} debug
     * @default
     */
@@ -43801,7 +43801,7 @@ Phaser.Component.Core.prototype = {
 
     /**
     * A Game Object is that is pendingDestroy is flagged to have its destroy method called on the next logic update.
-    * You can set it directly to allow you to flag an object to be destroyed on its next update.
+    * You can set it directly to allow you to mouseUpFlag an object to be destroyed on its next update.
     * 
     * This is extremely useful if you wish to destroy an object from within one of its own callbacks 
     * such as with Buttons or other Input events.
@@ -44116,7 +44116,7 @@ Phaser.Component.Destroy = function () {};
 Phaser.Component.Destroy.prototype = {
 
     /**
-    * As a Game Object runs through its destroy method this flag is set to true, 
+    * As a Game Object runs through its destroy method this mouseUpFlag is set to true,
     * and can be checked in any sub-systems or plugins it is being destroyed from.
     * @property {boolean} destroyPhase
     * @readOnly
@@ -44893,7 +44893,7 @@ Phaser.Component.LifeSpan.preUpdate = function () {
 Phaser.Component.LifeSpan.prototype = {
 
     /**
-    * A useful flag to control if the Game Object is alive or dead.
+    * A useful mouseUpFlag to control if the Game Object is alive or dead.
     *
     * This is set automatically by the Health components `damage` method should the object run out of health.
     * Or you can toggle it via your game code.
@@ -47612,7 +47612,7 @@ Phaser.BitmapData = function (game, key, width, height) {
     /**
     * @property {ImageData} imageData - The context image data.
     * Please note that a call to BitmapData.draw() or BitmapData.copy() does not update immediately this property for performance reason. Use BitmapData.update() to do so.
-    * This property is updated automatically after the first game loop, according to the dirty flag property.
+    * This property is updated automatically after the first game loop, according to the dirty mouseUpFlag property.
     */
     this.imageData = this.context.getImageData(0, 0, width, height);
 
@@ -47684,7 +47684,7 @@ Phaser.BitmapData = function (game, key, width, height) {
     this.type = Phaser.BITMAPDATA;
 
     /**
-    * @property {boolean} disableTextureUpload - If disableTextureUpload is true this BitmapData will never send its image data to the GPU when its dirty flag is true.
+    * @property {boolean} disableTextureUpload - If disableTextureUpload is true this BitmapData will never send its image data to the GPU when its dirty mouseUpFlag is true.
     */
     this.disableTextureUpload = false;
 
@@ -48452,7 +48452,7 @@ Phaser.BitmapData.prototype = {
     * @param {number} green - The green color value, between 0 and 0xFF (255).
     * @param {number} blue - The blue color value, between 0 and 0xFF (255).
     * @param {number} alpha - The alpha color value, between 0 and 0xFF (255).
-    * @param {boolean} [immediate=true] - If `true` the context.putImageData will be called and the dirty flag set.
+    * @param {boolean} [immediate=true] - If `true` the context.putImageData will be called and the dirty mouseUpFlag set.
     * @return {Phaser.BitmapData} This BitmapData object for method chaining.
     */
     setPixel32: function (x, y, red, green, blue, alpha, immediate) {
@@ -48490,7 +48490,7 @@ Phaser.BitmapData.prototype = {
     * @param {number} red - The red color value, between 0 and 0xFF (255).
     * @param {number} green - The green color value, between 0 and 0xFF (255).
     * @param {number} blue - The blue color value, between 0 and 0xFF (255).
-    * @param {boolean} [immediate=true] - If `true` the context.putImageData will be called and the dirty flag set.
+    * @param {boolean} [immediate=true] - If `true` the context.putImageData will be called and the dirty mouseUpFlag set.
     * @return {Phaser.BitmapData} This BitmapData object for method chaining.
     */
     setPixel: function (x, y, red, green, blue, immediate) {
@@ -51358,7 +51358,7 @@ PIXI.WebGLGraphics.updateGraphics = function(graphics, gl)
     // if the graphics object does not exist in the webGL context time to create it!
     if(!webGL)webGL = graphics._webGL[gl.id] = {lastIndex:0, data:[], gl:gl};
 
-    // flag the graphics as not dirty as we are about to update it...
+    // mouseUpFlag the graphics as not dirty as we are about to update it...
     graphics.dirty = false;
 
     var i;
@@ -64101,7 +64101,7 @@ Phaser.TimerEvent = function (timer, delay, tick, repeatCount, loop, callback, c
     this.args = args;
 
     /**
-    * @property {boolean} pendingDelete - A flag that controls if the TimerEvent is pending deletion.
+    * @property {boolean} pendingDelete - A mouseUpFlag that controls if the TimerEvent is pending deletion.
     * @protected
     */
     this.pendingDelete = false;
@@ -82396,7 +82396,7 @@ Phaser.Physics.Arcade.Body = function (sprite) {
     this.moves = true;
 
     /**
-    * This flag allows you to disable the custom x separation that takes place by Physics.Arcade.separate.
+    * This mouseUpFlag allows you to disable the custom x separation that takes place by Physics.Arcade.separate.
     * Used in combination with your own collision processHandler you can create whatever type of collision response you need.
     * @property {boolean} customSeparateX - Use a custom separation system or the built-in one?
     * @default
@@ -82404,7 +82404,7 @@ Phaser.Physics.Arcade.Body = function (sprite) {
     this.customSeparateX = false;
 
     /**
-    * This flag allows you to disable the custom y separation that takes place by Physics.Arcade.separate.
+    * This mouseUpFlag allows you to disable the custom y separation that takes place by Physics.Arcade.separate.
     * Used in combination with your own collision processHandler you can create whatever type of collision response you need.
     * @property {boolean} customSeparateY - Use a custom separation system or the built-in one?
     * @default
@@ -94859,7 +94859,7 @@ Phaser.Video = function (game, key, url) {
     this.type = Phaser.VIDEO;
 
     /**
-    * @property {boolean} disableTextureUpload - If true this video will never send its image data to the GPU when its dirty flag is true. This only applies in WebGL.
+    * @property {boolean} disableTextureUpload - If true this video will never send its image data to the GPU when its dirty mouseUpFlag is true. This only applies in WebGL.
     */
     this.disableTextureUpload = false;
 
