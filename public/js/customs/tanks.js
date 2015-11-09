@@ -1,7 +1,7 @@
 var GAME_WIDTH = 800;
 var GAME_HEIGHT = 600;
 
-game = new Phaser.Game(GAME_WIDTH, GAME_HEIGHT, Phaser.AUTO, 'tank-game', { preload: preload, create: eurecaClientSetup, update: update });
+game = new Phaser.Game(GAME_WIDTH, GAME_HEIGHT, Phaser.AUTO, 'tank-game', { preload: preload, create: eurecaClientSetup, update: update});
 
 /**
  * Abstract Tank class
@@ -218,4 +218,6 @@ function update(){
     for (var i = 0; i < NUM_OF_ENEMY_TANKS; i++){
         enemyTanks[i].update();
     }
+    console.log('> playerTank\'s position:');
+    console.log('x: ' + playerTank.tank.x + ' - y: ' + playerTank.tank.y);
 }
