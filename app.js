@@ -5,25 +5,53 @@ var eureca = require('eureca.io');
 var path = require('path');
 var favicon = require('serve-favicon');
 
-// serve static files from the current directory
+// Serve static files from the current directory
 app.use(express.static(__dirname));
-// serve favicon
+// Serve favicon
 app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')));
 
-//create an instance of EurecaServer
-var eurecaServer = new eureca.Server();
+// Create an instance of EurecaServer
+var eurecaServer = new eureca.Server({
+    allow: ['setPlayerTankId', 'kill', 'spawnEnemy']
+});
+// List of clients
+var clients = {};
 
-//attach eureca.io to our http server
+// Attach eureca.io to our http server
 eurecaServer.attach(server);
 
-//detect client connection
-eurecaServer.onConnect(function (conn) {
-    console.log('New Client id=%s ', conn.id, conn.remoteAddress);
+// Detect client connection
+eurecaServer.onConnect(function (connection) {
+    console.log('> New Client id=%s ', connection.id, connection.remoteAddress);
+    var remote = eurecaServer.getClient(connection.id);
+    clients[connection.id] = {
+        id: connection.id,
+        remote: remote
+    };
+    remote.setPlayerTankId(connection.id);
 });
 
-//detect client disconnection
+// Detect client disconnection
 eurecaServer.onDisconnect(function (conn) {
-    console.log('Client disconnected ', conn.id);
+    console.log('> Client disconnected ', conn.id);
+    delete clients[conn.id];
+    for (var c in clients)
+    {
+        var remote = clients[c].remote;
+        // Here we call kill() method defined in the client side
+        remote.kill(conn.id);
+    }
 });
+
+eurecaServer.exports.handshake = function(){
+    for (var c in clients)
+    {
+        var remote = clients[c].remote;
+        for (var cc in clients)
+        {
+            remote.spawnEnemy(clients[cc].id, 0, 0);
+        }
+    }
+};
 
 server.listen(3000);

@@ -2,10 +2,12 @@ var GAME_WIDTH = 800;
 var GAME_HEIGHT = 600;
 
 var playerTank;
+var playerTankId = 0;
+// Set of tanks
+var tanksList = {};
 var cursors;
 var mouse;
-var NUM_OF_ENEMY_TANKS = 0; // TODO set = 0 for multiplayer development
-var enemyTanks = [];
+// Explosions
 var NUM_OF_EXPLOSIONS = 10;
 var explosions;
 var BULLET_DAMAGE = 1;
@@ -15,14 +17,40 @@ var graphics;
 var obstacleList;
 var graphUtil;
 
+
 var ready = false;
 var eurecaServer;
 function eurecaClientSetup(){
     var eurecaClient = new Eureca.Client();
     eurecaClient.ready(function (serverProxy){
         eurecaServer = serverProxy;
-        create();
-        ready = true;
+
+        // Get current player tank ID
+        eurecaClient.exports.setPlayerTankId = function(id){
+            playerTankId = id;
+            create();
+            eurecaServer.handshake();
+            ready = true;
+        };
+
+        // Kill the tank with the specified ID
+        eurecaClient.exports.kill = function(id)
+        {
+            if (tanksList[id]) {
+                tanksList[id].kill();
+                console.log('> Killing ', id, tanksList[id]);
+            }
+        };
+
+        // Spawn a new enemy with the specified ID and position
+        eurecaClient.exports.spawnEnemy = function(id, x, y){
+            // Do not spawn yourself :v
+            if (id == playerTankId) return;
+
+            console.log('> Spawning tank with id = ', id);
+            // Add the new enemy to tanksList
+            tanksList[id] = new EnemyTank(id, x, y, game, 'enemyTank', playerTank);
+        };
     });
 }
 
@@ -30,17 +58,18 @@ game = new Phaser.Game(GAME_WIDTH, GAME_HEIGHT, Phaser.AUTO, 'tank-game', { prel
 
 /**
  * Abstract Tank class
+ * @param id
  * @param x
  * @param y
  * @param game
  * @param tankSprite
  * @constructor
  */
-var Tank = function(x, y, game, tankSprite){
+var Tank = function(id, x, y, game, tankSprite){
     if (this.constructor === Tank) {
         throw new Error("Can't instantiate abstract class!");
     }
-
+    this.id = id;
     this.game = game;
 
     this.tank = game.add.sprite(x, y, tankSprite, 'tank1');
@@ -70,15 +99,11 @@ var Tank = function(x, y, game, tankSprite){
     this.bullets.setAll('checkWorldBounds', true);
 
     // Other information (default value)
-    this.currentSpeed = 0;
     this.coolDownTime = 0;
     this.fireTime = 0;
     this.hp = 0;
 
     // HIEU
-    this.rotateVelocity = 4;
-    this.moveVelocity = 4;
-    this.destinationList = [];
     this.finalDestination = null;
     this.path = null;
 
@@ -87,16 +112,16 @@ var Tank = function(x, y, game, tankSprite){
 
 /**
  * PlayerTank class
+ * @param id
  * @param x
  * @param y
  * @param game
- * @param tankSprite ('playerTank')
+ * @param tankSprite
  * @param cursors
  * @constructor
  */
-var PlayerTank = function(x, y, game, tankSprite, cursors){
+var PlayerTank = function(id, x, y, game, tankSprite, cursors){
     Tank.apply(this, arguments);
-    this.cursors = cursors;
     this.coolDownTime = 500;
     this.hp = 10;
     this.mouseUpFlag = true;
@@ -112,14 +137,6 @@ PlayerTank.prototype.update = function(){
     this.shadow.y = this.tank.y;
     this.shadow.angle = this.tank.angle;
     this.turret.rotation = this.game.physics.arcade.angleToPointer(this.turret);
-    // Controls handlers
-    if (this.cursors.left.isDown){
-        this.tank.angle -= this.rotateVelocity;
-    }
-    else if (this.cursors.right.isDown){
-        this.tank.angle += this.rotateVelocity;
-
-    }
     // Adjust angle
     if (Math.abs(this.tank.angle - this.desireAngle) >= 5) {
         var val1 = (this.desireAngle - this.tank.angle) / 10;
@@ -149,10 +166,9 @@ PlayerTank.prototype.update = function(){
         var x = Math.round(this.tank.x);
         var y = Math.round(this.tank.y);
         this.path = graphUtil.getShortestPath(new Vertex(x, y, 'start'), new Vertex(this.finalDestination.x, this.finalDestination.y, 'end'));
-        //var path = graphUtil.getShortestPath(new Vertex(game.rnd.integerInRange(50, 750), game.rnd.integerInRange(50, 750), 'start'), new Vertex(game.rnd.integerInRange(50, 750), game.rnd.integerInRange(50, 750), 'end'))
         drawPath(this.path, lineGraphics);
         // Update flag
-        this.moveComplete = false
+        this.moveComplete = false;
         this.game.physics.arcade.moveToObject(this.tank, this.path[0].point, 120);
         console.log("mouse " + this.game.input.x + " - " + this.game.input.y);
         console.log("camera " + this.game.camera.position);
@@ -198,14 +214,15 @@ PlayerTank.prototype.kill = function(){
 
 /**
  * EnemyTank class
+ * @param id
  * @param x
  * @param y
  * @param game
- * @param tankSprite ('enemyTank')
+ * @param tankSprite
  * @param playerTank
  * @constructor
  */
-var EnemyTank = function(x, y, game, tankSprite, playerTank){
+var EnemyTank = function(id, x, y, game, tankSprite, playerTank){
     Tank.apply(this, arguments);
     this.playerTank = playerTank;
     this.coolDownTime = 1000;
@@ -257,26 +274,24 @@ function create(){
 
     mouse = game.input.mouse;
 
-    playerTank = new PlayerTank(game.world.centerX, game.world.centerY, game, 'playerTank', cursors);
-
-
     var playerTankInitialPos = {
         x: game.world.randomX,
         y: game.world.randomY
     };
 
-    for (var i = 0; i < NUM_OF_ENEMY_TANKS; i++){
-        enemyTanks[i] = new EnemyTank(game.world.randomX, game.world.randomY, game, 'enemyTank', playerTank);
-    }
+    playerTank = new PlayerTank(playerTankId, playerTankInitialPos.x, playerTankInitialPos.y, game, 'playerTank', cursors);
+    tanksList[playerTankId] = playerTank;
 
     explosions = game.add.group();
-    for (i = 0; i < NUM_OF_EXPLOSIONS; i++){
+    for (var i = 0; i < NUM_OF_EXPLOSIONS; i++){
         var explosion = explosions.create(0, 0, 'explosion', 0, false);
         explosion.anchor.setTo(0.5, 0.5);
         explosion.animations.add('explode');
     }
     // Disable deault right click handler
-    game.canvas.oncontextmenu = function (e) { e.preventDefault(); }
+    game.canvas.oncontextmenu = function (e) {
+        e.preventDefault();
+    };
     // Obstacle
     lineGraphics = game.add.graphics(0, 0);
     graphics = game.add.graphics(0, 0);
@@ -293,12 +308,11 @@ function create(){
 
 function update(){
     if (!ready) return;
-    playerTank.update();
-    for (var i = 0; i < NUM_OF_ENEMY_TANKS; i++){
-        enemyTanks[i].update();
+    for (var tank in tanksList){
+        tanksList[tank].update();
     }
-    console.log('> playerTank\'s position:');
-    console.log('x: ' + playerTank.tank.x + ' - y: ' + playerTank.tank.y);
+    //console.log('> playerTank\'s position:');
+    //console.log('x: ' + playerTank.tank.x + ' - y: ' + playerTank.tank.y);
 }
 
 function drawPath(path, graphics) {
