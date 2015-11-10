@@ -43,15 +43,20 @@ eurecaServer.onDisconnect(function (conn) {
     }
 });
 
-eurecaServer.exports.handshake = function(){
-    for (var c in clients)
-    {
-        var remote = clients[c].remote;
-        for (var cc in clients){
-            //send latest known position
-            var x = clients[cc].lastState ? clients[cc].lastState.x : 0;
-            var y = clients[cc].lastState ? clients[cc].lastState.y : 0;
-            remote.spawnEnemy(clients[cc].id, x, y);
+eurecaServer.exports.handshake = function(id, clientInitialPos){
+    var newClientRemote = clients[id].remote;
+    clients[id].lastState = {
+        destination: {
+            x: clientInitialPos.x,
+            y: clientInitialPos.y
+        }
+    };
+    for (var c in clients){
+        // Spawn this new client tank to all clients
+        clients[c].remote.spawnEnemy(id, clientInitialPos.x, clientInitialPos.y);
+        // Spawn all clients tank to this new client
+        if (clients[c].id !== id){
+            newClientRemote.spawnEnemy(clients[c].id, clients[c].lastState.destination.x, clients[c].lastState.destination.y);
         }
     }
 };
@@ -64,7 +69,6 @@ eurecaServer.exports.handleMovement = function (newState) {
     {
         var remote = clients[c].remote;
         remote.updateState(updatedClient.id, newState);
-
         //keep last known state so we can send it to new connected clients
         clients[c].lastState = newState;
     }
