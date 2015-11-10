@@ -16,7 +16,11 @@ var lineGraphics;
 var graphics;
 var obstacleList;
 var graphUtil;
-game = new Phaser.Game(GAME_WIDTH, GAME_HEIGHT, Phaser.AUTO, 'tank-game', { preload: preload, create: create, update: update});
+game = new Phaser.Game(GAME_WIDTH, GAME_HEIGHT, Phaser.AUTO, 'tank-game', {
+    preload: preload,
+    create: create,
+    update: update
+});
 
 /**
  * Abstract Tank class
@@ -27,7 +31,7 @@ game = new Phaser.Game(GAME_WIDTH, GAME_HEIGHT, Phaser.AUTO, 'tank-game', { prel
  * @param tankSprite
  * @constructor
  */
-var Tank = function(id, x, y, game, tankSprite){
+var Tank = function (id, x, y, game, tankSprite) {
     if (this.constructor === Tank) {
         throw new Error("Can't instantiate abstract class!");
     }
@@ -56,7 +60,7 @@ var Tank = function(id, x, y, game, tankSprite){
     this.bullets = game.add.group();
     this.bullets.createMultiple(30, 'bullet', 0, false); // quantity, key, frame, isExist
     this.game.physics.p2.enable(this.bullets);
-    this.bullets.forEach(function(bullet){
+    this.bullets.forEach(function (bullet) {
         bullet.body.static = true;
     }, this);
     this.bullets.applySpringForces = false;
@@ -87,7 +91,7 @@ var Tank = function(id, x, y, game, tankSprite){
  * @param cursors
  * @constructor
  */
-var PlayerTank = function(id, x, y, game, tankSprite, cursors){
+var PlayerTank = function (id, x, y, game, tankSprite, cursors) {
     Tank.apply(this, arguments);
     this.coolDownTime = 500;
     this.hp = 10;
@@ -97,7 +101,7 @@ var PlayerTank = function(id, x, y, game, tankSprite, cursors){
 };
 
 PlayerTank.prototype = Object.create(Tank);
-PlayerTank.prototype.update = function(){
+PlayerTank.prototype.update = function () {
     this.turret.x = this.tank.x;
     this.turret.y = this.tank.y;
     this.shadow.x = this.tank.x;
@@ -106,22 +110,21 @@ PlayerTank.prototype.update = function(){
     this.turret.rotation = angleToPointer(this.turret, this.game.input);
 
     // Fire on left click
-    if (this.game.input.activePointer.leftButton.isDown)
-    {
-        if (this.game.time.now - this.coolDownTime > this.fireTime){
+    if (this.game.input.activePointer.leftButton.isDown) {
+        if (this.game.time.now - this.coolDownTime > this.fireTime) {
             this.fire();
         }
     }
 
     // Adjust angle
-    if (Math.abs(this.tank.angle - this.desireAngle) >= 5) {
-        var val1 = (this.desireAngle - this.tank.angle) / 10;
-        var val2 = (this.tank.angle - this.desireAngle) / 10;
-        if (Math.abs(val1) < Math.abs(val2)){
-            this.tank.body.angle += val1;
-        } else {
-            this.tank.body.angle -= val2;
-        }
+    if (Math.abs(this.tank.angle - this.desireAngle) >= 10) {
+        var offset = (this.desireAngle - this.tank.angle) / 10;
+        //var val2 = (this.tank.angle - this.desireAngle) / 10;
+        //if (Math.abs(val1) < Math.abs(val2)){
+        this.tank.body.angle += offset;
+        //} else {
+        //    this.tank.body.angle -= val2;
+        //}
     } else {
         this.tank.angle = this.desireAngle;
     }
@@ -137,7 +140,9 @@ PlayerTank.prototype.update = function(){
         var y = Math.round(this.tank.y);
         var calculatePath = graphUtil.getShortestPath(new Vertex(x, y, 'start'), new Vertex(this.finalDestination.x, this.finalDestination.y, 'end'));
         this.path = calculatePath.path;
-        drawPath(this.path, lineGraphics);
+        if (Data.DEBUG) {
+            drawPath(this.path, lineGraphics);
+        }
         this.finalDestination = calculatePath.des;
         // Update flag
         this.moveComplete = false;
@@ -157,24 +162,30 @@ PlayerTank.prototype.update = function(){
         this.tank.body.velocity.y = 0;
     }
 
-    if (this.path && this.path.length > 0 && this.path[0].point.distance(new Phaser.Point(this.tank.x, this.tank.y)) <= 3){
+    if (this.path && this.path.length > 0 && this.path[0].point.distance(new Phaser.Point(this.tank.x, this.tank.y)) <= 3) {
         this.path.shift();
+        if (this.path.length > 0) {
+            var newAngle = Phaser.Point.angle(new Phaser.Point(this.tank.x, this.tank.y), this.path[0].point) * 180 / Math.PI;
+            var optimyAngle = optimizeAngle(this.desireAngle, newAngle);
+            console.log("old Angle " + this.desireAngle + " vs " + " new angle " + newAngle + " vs " + optimyAngle);
+            this.desireAngle = newAngle;
+        }
     }
-    if (this.path && this.path.length > 0){
+    if (this.path && this.path.length > 0) {
         moveToObject(this.tank, this.path[0].point, 120);
-        this.desireAngle = Phaser.Point.angle(new Phaser.Point(this.tank.x, this.tank.y), this.path[0].point) * 180 / Math.PI;
     }
 };
-PlayerTank.prototype.fire = function(){
-    if (this.bullets.countDead() > 0){
+PlayerTank.prototype.fire = function () {
+    if (this.bullets.countDead() > 0) {
         // Group.getFirstExists(isExist)
-        var bullet = this.bullets.getFirstExists(false);
-        bullet.reset(this.turret.x, this.turret.y);
-        bullet.body.rotation = moveToPointer(bullet, 1000, this.game.input.activePointer);
+        //var bullet = this.bullets.getFirstExists(false);
+        var bullet = new Bullet(this.turret.x, this.turret.y, game);
+        //bullet.sprite.body.reset(this.turret.x, this.turret.y);
+        bullet.sprite.body.rotation = moveToPointer(bullet.sprite, 1000, this.game.input.activePointer);
         this.fireTime = this.game.time.now;
     }
 };
-PlayerTank.prototype.kill = function(){
+PlayerTank.prototype.kill = function () {
     this.tank.kill();
     this.turret.kill();
     this.shadow.kill();
@@ -190,14 +201,14 @@ PlayerTank.prototype.kill = function(){
  * @param playerTank
  * @constructor
  */
-var EnemyTank = function(id, x, y, game, tankSprite, playerTank){
+var EnemyTank = function (id, x, y, game, tankSprite, playerTank) {
     Tank.apply(this, arguments);
     this.playerTank = playerTank;
     this.coolDownTime = 1000;
     this.hp = 3;
 };
 
-EnemyTank.prototype.update = function(){
+EnemyTank.prototype.update = function () {
     this.turret.x = this.tank.x;
     this.turret.y = this.tank.y;
     this.shadow.x = this.tank.x;
@@ -205,23 +216,32 @@ EnemyTank.prototype.update = function(){
     this.shadow.angle = this.tank.angle;
     this.turret.rotation = angleBetween(this.tank, this.playerTank.tank);
 };
-EnemyTank.prototype.getShot = function(tank, bullet){
+EnemyTank.prototype.getShot = function (tank, bullet) {
     bullet.kill();
     tank.tankObject.hp -= BULLET_DAMAGE;
-    if (tank.tankObject.hp <= 0){
+    if (tank.tankObject.hp <= 0) {
         var explosionAnimation = explosions.getFirstExists(false);
         explosionAnimation.reset(tank.x, tank.y);
         explosionAnimation.play('explode', 30, false, true);
         tank.tankObject.kill();
     }
 };
-EnemyTank.prototype.kill = function(){
+EnemyTank.prototype.kill = function () {
     this.tank.kill();
     this.turret.kill();
     this.shadow.kill();
 };
 
-function preload(){
+
+var Bullet = function (x, y, game) {
+    this.game = game;
+    this.sprite = game.add.sprite(x, y, 'bullet');
+    game.physics.p2.enable(this.sprite);
+    this.sprite.body.static = true;
+};
+
+
+function preload() {
     game.load.image('earth', '/public/assets/images/tank_map.png');
     game.load.atlas('playerTank', '/public/assets/images/red_tank.png', '/public/assets/images/red_tank.json');
     game.load.atlas('enemyTank', '/public/assets/images/blue_tank.png', '/public/assets/images/blue_tank.json');
@@ -229,7 +249,7 @@ function preload(){
     game.load.spritesheet('explosion', '/public/assets/images/explosion.png', 64, 64, 23);
 }
 
-function create(){
+function create() {
     game.world.setBounds(Data.MAP_DATA.startx, Data.MAP_DATA.starty, Data.MAP_DATA.width, Data.MAP_DATA.height);
     game.physics.startSystem(Phaser.Physics.P2JS);
     game.add.tileSprite(Data.MAP_DATA.startx, Data.MAP_DATA.starty, Data.MAP_DATA.width, Data.MAP_DATA.height, 'earth');
@@ -246,12 +266,12 @@ function create(){
     playerTank = new PlayerTank(playerTankId, playerTankInitialPos.x, playerTankInitialPos.y, game, 'playerTank', cursors);
     tanksList[playerTankId] = playerTank;
 
-    for (var i = 0; i < 3; i++){
+    for (var i = 0; i < 3; i++) {
         var newEnemy = new EnemyTank('enemy', game.world.randomX, game.world.randomY, game, 'enemyTank', playerTank);
     }
 
     explosions = game.add.group();
-    for (var i = 0; i < NUM_OF_EXPLOSIONS; i++){
+    for (var i = 0; i < NUM_OF_EXPLOSIONS; i++) {
         var explosion = explosions.create(0, 0, 'explosion', 0, false);
         explosion.anchor.setTo(0.5, 0.5);
         explosion.animations.add('explode');
@@ -264,7 +284,7 @@ function create(){
     lineGraphics = game.add.graphics(0, 0);
     graphics = game.add.graphics(0, 0);
     obstacleList = Data.generateObstacle();
-    if (Data.DEBUG){
+    if (Data.DEBUG) {
         for (var obs = 0; obs < obstacleList.length; obs++) {
             obstacleList[obs].draw(graphics);
         }
@@ -276,8 +296,8 @@ function create(){
     game.camera.focusOnXY(playerTankInitialPos.x, playerTankInitialPos.y);
 }
 
-function update(){
-    for (var tank in tanksList){
+function update() {
+    for (var tank in tanksList) {
         tanksList[tank].update();
     }
 }

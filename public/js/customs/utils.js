@@ -76,3 +76,15 @@ function angleToPointer(displayObject, pointer) {
 
     return Math.atan2(dy, dx);
 }
+
+function optimizeAngle(oldAngle, newAngle){
+    //if (angle >= 180) {
+    //    angle = angle - 360;
+    //} else if (angle < -180) {
+    //    angle = angle + 360;
+    //}
+    if ((Math.round(newAngle) - oldAngle) >= 180) {
+        newAngle = newAngle - 360;
+    }
+    return Math.round(newAngle);
+}
