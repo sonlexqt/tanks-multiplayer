@@ -69,7 +69,7 @@ function eurecaClientSetup(){
                 tanksList[id].shadow.y = state.y;
                 tanksList[id].shadow.angle = state.angle;
                 // Move
-                game.physics.arcade.moveToObject(tanksList[id].tank, Phaser.Point(state.x, state.y), 120);
+                game.physics.arcade.moveToObject(tanksList[id].tank, new Phaser.Point(state.x, state.y), 120);
                 tanksList[id].update();
             }
         }
@@ -197,11 +197,6 @@ PlayerTank.prototype.update = function(){
         // Update flag
         this.moveComplete = false;
         this.game.physics.arcade.moveToObject(this.tank, this.path[0].point, 120);
-        console.log("mouse " + this.game.input.x + " - " + this.game.input.y);
-        console.log("camera " + this.game.camera.position);
-        console.log("tank " + this.tank.position);
-        console.log("final des " + this.finalDestination);
-        console.log(this.path);
         // TODO XIN
         eurecaServer.handleMovement({
             x: desx,
