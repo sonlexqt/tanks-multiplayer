@@ -18,65 +18,65 @@ var obstacleList;
 var graphUtil;
 
 
-var ready = false;
-var eurecaServer;
-function eurecaClientSetup(){
-    var eurecaClient = new Eureca.Client();
-    eurecaClient.ready(function (serverProxy){
-        eurecaServer = serverProxy;
+//var ready = false;
+//var eurecaServer;
+//function eurecaClientSetup(){
+//    var eurecaClient = new Eureca.Client();
+//    eurecaClient.ready(function (serverProxy){
+//        eurecaServer = serverProxy;
+//
+//        // Get current player tank ID
+//        eurecaClient.exports.setPlayerTankId = function(id){
+//            playerTankId = id;
+//            create();
+//            eurecaServer.handshake();
+//            ready = true;
+//        };
+//
+//        // Kill the tank with the specified ID
+//        eurecaClient.exports.kill = function(id)
+//        {
+//            if (tanksList[id]) {
+//                tanksList[id].kill();
+//                console.log('> Killing ', id, tanksList[id]);
+//            }
+//        };
+//
+//        // Spawn a new enemy with the specified ID and position
+//        eurecaClient.exports.spawnEnemy = function(id, x, y){
+//            // Do not spawn yourself :v
+//            if (id == playerTankId) return;
+//
+//            console.log('> Spawning tank with id = ', id);
+//            // Add the new enemy to tanksList
+//            tanksList[id] = new EnemyTank(id, x, y, game, 'enemyTank', playerTank);
+//        };
+//
+//        // Update the state of a tank with the specified ID
+//        eurecaClient.exports.updateState = function(id, state){
+//            // TODO XIN
+//            if (tanksList[id])  {
+//                // Update the tank body
+//                tanksList[id].tank.x = state.x;
+//                tanksList[id].tank.y = state.y;
+//                tanksList[id].tank.angle = state.angle;
+//                // Update the turret
+//                tanksList[id].turret.x = state.x;
+//                tanksList[id].turret.y = state.y;
+//                tanksList[id].turret.rotation = state.rotation;
+//                // Update the shadow
+//                tanksList[id].shadow.x = state.x;
+//                tanksList[id].shadow.y = state.y;
+//                tanksList[id].shadow.angle = state.angle;
+//                // Move
+//                game.physics.arcade.moveToObject(tanksList[id].tank, new Phaser.Point(state.x, state.y), 120);
+//                tanksList[id].update();
+//            }
+//        }
+//    });
+//}
 
-        // Get current player tank ID
-        eurecaClient.exports.setPlayerTankId = function(id){
-            playerTankId = id;
-            create();
-            eurecaServer.handshake();
-            ready = true;
-        };
-
-        // Kill the tank with the specified ID
-        eurecaClient.exports.kill = function(id)
-        {
-            if (tanksList[id]) {
-                tanksList[id].kill();
-                console.log('> Killing ', id, tanksList[id]);
-            }
-        };
-
-        // Spawn a new enemy with the specified ID and position
-        eurecaClient.exports.spawnEnemy = function(id, x, y){
-            // Do not spawn yourself :v
-            if (id == playerTankId) return;
-
-            console.log('> Spawning tank with id = ', id);
-            // Add the new enemy to tanksList
-            tanksList[id] = new EnemyTank(id, x, y, game, 'enemyTank', playerTank);
-        };
-
-        // Update the state of a tank with the specified ID
-        eurecaClient.exports.updateState = function(id, state){
-            // TODO XIN
-            if (tanksList[id])  {
-                // Update the tank body
-                tanksList[id].tank.x = state.x;
-                tanksList[id].tank.y = state.y;
-                tanksList[id].tank.angle = state.angle;
-                // Update the turret
-                tanksList[id].turret.x = state.x;
-                tanksList[id].turret.y = state.y;
-                tanksList[id].turret.rotation = state.rotation;
-                // Update the shadow
-                tanksList[id].shadow.x = state.x;
-                tanksList[id].shadow.y = state.y;
-                tanksList[id].shadow.angle = state.angle;
-                // Move
-                game.physics.arcade.moveToObject(tanksList[id].tank, new Phaser.Point(state.x, state.y), 120);
-                tanksList[id].update();
-            }
-        }
-    });
-}
-
-game = new Phaser.Game(GAME_WIDTH, GAME_HEIGHT, Phaser.AUTO, 'tank-game', { preload: preload, create: eurecaClientSetup, update: update});
+game = new Phaser.Game(GAME_WIDTH, GAME_HEIGHT, Phaser.AUTO, 'tank-game', { preload: preload, create: create, update: update});
 
 /**
  * Abstract Tank class
@@ -197,13 +197,13 @@ PlayerTank.prototype.update = function(){
         // Update flag
         this.moveComplete = false;
         this.game.physics.arcade.moveToObject(this.tank, this.path[0].point, 120);
-        // TODO XIN
-        eurecaServer.handleMovement({
-            x: desx,
-            y: desy,
-            angle: playerTank.desireAngle,
-            rotation: playerTank.turret.rotation
-        });
+        //// TODO XIN
+        //eurecaServer.handleMovement({
+        //    x: desx,
+        //    y: desy,
+        //    angle: playerTank.desireAngle,
+        //    rotation: playerTank.turret.rotation
+        //});
     }
     if (this.game.input.activePointer.rightButton.isUp && this.mouseUpFlag == false) {
         this.mouseUpFlag = true;
@@ -338,7 +338,7 @@ function create(){
 }
 
 function update(){
-    if (!ready) return;
+    //if (!ready) return;
     for (var tank in tanksList){
         tanksList[tank].update();
     }
