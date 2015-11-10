@@ -1,6 +1,7 @@
 var GAME_WIDTH = window.innerWidth;
 var GAME_HEIGHT = window.innerHeight;
 
+// Current player's tank information
 var playerTank;
 var playerTankId = 0;
 var playerTankInitialPos = {
@@ -13,6 +14,8 @@ var mouse;
 // Explosions
 var NUM_OF_EXPLOSIONS = 10;
 var explosions;
+// Bullets
+var bulletsList = [];
 var BULLET_DAMAGE = 1;
 //TODO remove after finish
 var lineGraphics;
@@ -57,7 +60,7 @@ function eurecaClientSetup(){
         };
 
         // Update the state of a tank with the specified ID
-        eurecaClient.exports.updateState = function(id, state){
+        eurecaClient.exports.updateMovement = function(id, state){
             var statePath = state.path;
             var restoredPath = [];
             for (var i = 0; i < statePath.length; i++){
@@ -68,7 +71,19 @@ function eurecaClientSetup(){
                 tanksList[id].desireAngle = state.desireAngle;
                 tanksList[id].update();
             }
-        }
+        };
+
+        // Update new fires
+        eurecaClient.exports.updateFire = function(fireInfo){
+            if (tanksList[fireInfo.tankId]){
+                // Update the the turret rotation of the tank which fired
+                tanksList[fireInfo.tankId].turret.rotation = fireInfo.turret.rotation;
+                // Create a new bullet & make it move
+                var bullet = new Bullet(fireInfo.bulletInitialPos.x, fireInfo.bulletInitialPos.y, game);
+                bullet.sprite.body.rotation = moveToPointer(bullet.sprite, 1000, fireInfo.pointer);
+            }
+        };
+
     });
 }
 
@@ -106,23 +121,10 @@ var Tank = function (id, x, y, game, tankSprite) {
     this.tank.bringToTop();
     this.turret.bringToTop();
 
-    // Bullets
-    this.bullets = game.add.group();
-    this.bullets.createMultiple(30, 'bullet', 0, false); // quantity, key, frame, isExist
-    this.game.physics.p2.enable(this.bullets);
-    this.bullets.forEach(function (bullet) {
-        bullet.body.static = true;
-    }, this);
-    this.bullets.applySpringForces = false;
-    this.bullets.setAll('anchor.x', 0.5);
-    this.bullets.setAll('anchor.y', 0.5);
-    this.bullets.setAll('outOfBoundsKill', true);
-    this.bullets.setAll('checkWorldBounds', true);
-
     // Other information (default value)
-    this.coolDownTime = 0;
+    this.coolDownTime = 500;
     this.fireTime = 0;
-    this.hp = 0;
+    this.hp = 10;
     this.isDied = false;
 
     // HIEU
@@ -147,8 +149,6 @@ var Tank = function (id, x, y, game, tankSprite) {
 
 var PlayerTank = function(id, x, y, game, tankSprite){
     Tank.apply(this, arguments);
-    this.coolDownTime = 500;
-    this.hp = 10;
 };
 
 PlayerTank.prototype = Object.create(Tank);
@@ -163,7 +163,26 @@ PlayerTank.prototype.update = function () {
     // Fire on left click
     if (this.game.input.activePointer.leftButton.isDown){
         if (this.game.time.now - this.coolDownTime > this.fireTime){
-            this.fire();
+            // Fire !
+            this.fireTime = this.game.time.now;
+            var pointer = {
+                worldX: this.game.input.activePointer.worldX,
+                worldY: this.game.input.activePointer.worldY
+            };
+            var bulletInitialPos = {
+                x: this.turret.x,
+                y: this.turret.y
+            };
+            var fireInfo = {
+                tankId: this.id,
+                turret: {
+                    rotation: this.turret.rotation
+                },
+                pointer: pointer,
+                bulletInitialPos: bulletInitialPos
+            };
+            // Send fire information to server
+            eurecaServer.handleFire(fireInfo);
         }
     }
 
@@ -198,6 +217,7 @@ PlayerTank.prototype.update = function () {
         // Update flag
         this.moveComplete = false;
         moveToObject(this.tank, this.path[0].point, 120);
+        // Send movement information to server
         eurecaServer.handleMovement({
             destination: {
                 x: desx,
@@ -228,16 +248,6 @@ PlayerTank.prototype.update = function () {
         this.desireAngle = Phaser.Point.angle(new Phaser.Point(this.tank.x, this.tank.y), this.path[0].point) * 180 / Math.PI;
     }
 };
-PlayerTank.prototype.fire = function () {
-    if (this.bullets.countDead() > 0) {
-        // Group.getFirstExists(isExist)
-        //var bullet = this.bullets.getFirstExists(false);
-        var bullet = new Bullet(this.turret.x, this.turret.y, game);
-        //bullet.sprite.body.reset(this.turret.x, this.turret.y);
-        bullet.sprite.body.rotation = moveToPointer(bullet.sprite, 1000, this.game.input.activePointer);
-        this.fireTime = this.game.time.now;
-    }
-};
 PlayerTank.prototype.kill = function () {
     this.tank.kill();
     this.turret.kill();
@@ -258,8 +268,6 @@ PlayerTank.prototype.kill = function () {
 var EnemyTank = function (id, x, y, game, tankSprite, playerTank) {
     Tank.apply(this, arguments);
     this.playerTank = playerTank;
-    this.coolDownTime = 1000;
-    this.hp = 3;
 };
 
 EnemyTank.prototype.update = function () {
@@ -268,7 +276,6 @@ EnemyTank.prototype.update = function () {
     this.shadow.x = this.tank.x;
     this.shadow.y = this.tank.y;
     this.shadow.angle = this.tank.angle;
-    this.turret.rotation = angleBetween(this.tank, this.playerTank.tank);
 
     // Adjust angle
     if (Math.abs(this.tank.angle - this.desireAngle) >= 5) {
@@ -327,8 +334,13 @@ var Bullet = function (x, y, game) {
     this.sprite = game.add.sprite(x, y, 'bullet');
     game.physics.p2.enable(this.sprite);
     this.sprite.body.static = true;
+    this.isKilled = false;
 };
 
+Bullet.prototype.kill = function(){
+    this.sprite.kill();
+    this.isKilled = true;
+};
 
 function preload() {
     game.load.image('earth', '/public/assets/images/tank_map.png');

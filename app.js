@@ -12,7 +12,13 @@ app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')));
 
 // Create an instance of EurecaServer
 var eurecaServer = new eureca.Server({
-    allow: ['setPlayerTankId', 'kill', 'spawnEnemy', 'updateState']
+    allow: [
+        'setPlayerTankId',
+        'kill',
+        'spawnEnemy',
+        'updateMovement',
+        'updateFire'
+    ]
 });
 // Set of clients
 var clients = {};
@@ -56,7 +62,9 @@ eurecaServer.exports.handshake = function(id, clientInitialPos){
         clients[c].remote.spawnEnemy(id, clientInitialPos.x, clientInitialPos.y);
         // Spawn all clients tank to this new client
         if (clients[c].id !== id){
-            newClientRemote.spawnEnemy(clients[c].id, clients[c].lastState.destination.x, clients[c].lastState.destination.y);
+            if (clients[c].lastState && clients[c].lastState.destination){
+                newClientRemote.spawnEnemy(clients[c].id, clients[c].lastState.destination.x, clients[c].lastState.destination.y);
+            }
         }
     }
 };
@@ -65,12 +73,17 @@ eurecaServer.exports.handleMovement = function (newState) {
     var conn = this.connection;
     var updatedClient = clients[conn.id];
 
-    for (var c in clients)
-    {
+    for (var c in clients){
         var remote = clients[c].remote;
-        remote.updateState(updatedClient.id, newState);
+        remote.updateMovement(updatedClient.id, newState);
         //keep last known state so we can send it to new connected clients
         clients[c].lastState = newState;
+    }
+};
+
+eurecaServer.exports.handleFire = function(fireInfo){
+    for (var c in clients){
+        clients[c].remote.updateFire(fireInfo);
     }
 };
 
