@@ -83,9 +83,6 @@ Obstacle.prototype.getRightVertex = function () {
 };
 var GraphUtils = function (obstaclesList) {
     this.obstaclesList = obstaclesList;
-    //TODO remove these attributes
-    this.edgesList = this.getEdgesList();
-    this.verticesList = this.getVerticesList();
 };
 
 GraphUtils.prototype.getCrossObstacles = function (startPoint, endPoint) {
@@ -111,78 +108,64 @@ GraphUtils.prototype.getCrossObstacles = function (startPoint, endPoint) {
     return crossObstacles;
 };
 
-GraphUtils._isCrossOver = function (startPoint, endPoint, obstacle) {
+GraphUtils.isCrossOver = function (startPoint, endPoint, obstacle) {
     // If obstacle has only one vertex, it never been cross by line
     if (obstacle.vertexList.length <= 1)
         return false;
-    //Check vertically
-    //if ((((startPoint.y - obstacle.top.y) * (endPoint.y - obstacle.top.y) < 0) ||
-    //    ((startPoint.y - obstacle.bot.y) * (endPoint.y - obstacle.bot.y) < 0) ||
-    //    ((startPoint.y > obstacle.top.y) && (endPoint.y < obstacle.bot.y)))
-    //    || (((startPoint.x - obstacle.left.x) * (endPoint.x - obstacle.left.x) < 0) ||
-    //    ((startPoint.x - obstacle.right.x) * (endPoint.x - obstacle.right.x) < 0 ||
-    //    ((startPoint.x > obstacle.left.x) && (endPoint.x < obstacle.right.x))))) {
-    if (true) {
-        //TODO check one in two point is in the obstacle area - NO NEED
-        var line1 = GraphUtils.getLineObject(startPoint, endPoint);
-        var crosspoints = {'num': 0};
-        for (var vert = 0; vert < obstacle.vertexList.length; vert++) {
-            var point1 = obstacle.vertexList[vert];
-            var point2 = obstacle.vertexList[(vert + 1) % obstacle.vertexList.length];
-            var line2 = GraphUtils.getLineObject(point1, point2);
-            var D = line1.A * line2.B - line2.A * line1.B;
-            var Dx = line1.C * line2.B - line2.C * line1.B;
-            var Dy = line1.A * line2.C - line2.A * line1.C;
-            if (D == 0) {
-                if (Dx != 0 || Dy != 0) {
-                    //TODO song song - NO NEED
-                } else if (Dx == 0 && Dy == 0) {
-                    //if (GraphUtils.isAPointInALine(startPoint, point1, point2) ||
-                    //    (GraphUtils.isAPointInALine(endPoint, point1, point2)) ||
-                    //    (GraphUtils.isAPointInALine(point1, startPoint, endPoint)) ||
-                    //    (GraphUtils.isAPointInALine(point2, startPoint, endPoint))) {
-                    //    return true;
-                    //}
-                }
-            } else {
-                var crossx = Dx / D;
-                var crossy = Dy / D;
-                var point = new Vertex(crossx, crossy, 'none');
-                if (GraphUtils.isAPointInALine(point, point1, point2) && GraphUtils.isAPointInALine(point, startPoint, endPoint)) {
-                    if (crosspoints[crossx] == null) {
-                        crosspoints[crossx] = crossy;
-                        crosspoints['num']++;
-                    }
+    //TODO check one in two point is in the obstacle area - NO NEED
+    var line1 = GraphUtils.getLineObject(startPoint, endPoint);
+    var crosspoints = {'num': 0};
+    for (var vert = 0; vert < obstacle.vertexList.length; vert++) {
+        var point1 = obstacle.vertexList[vert];
+        var point2 = obstacle.vertexList[(vert + 1) % obstacle.vertexList.length];
+        var line2 = GraphUtils.getLineObject(point1, point2);
+        var D = line1.A * line2.B - line2.A * line1.B;
+        var Dx = line1.C * line2.B - line2.C * line1.B;
+        var Dy = line1.A * line2.C - line2.A * line1.C;
+        if (D == 0) {
+            if (Dx != 0 || Dy != 0) {
+                //TODO song song - NO NEED
+            } else if (Dx == 0 && Dy == 0) {
+                //TODO identical - NO NEED
+            }
+        } else {
+            var crossx = Dx / D;
+            var crossy = Dy / D;
+            var point = new Vertex(crossx, crossy, 'none');
+            if (GraphUtils.isAPointInALine(point, point1, point2) && GraphUtils.isAPointInALine(point, startPoint, endPoint)) {
+                if (crosspoints[crossx] == null) {
+                    crosspoints[crossx] = crossy;
+                    crosspoints['num']++;
                 }
             }
         }
-        if (crosspoints['num'] >= 2) {
-            return {'value': true, 'crosspoints': crosspoints};
-        }
+    }
+    if (crosspoints['num'] >= 2) {
+        return {'value': true, 'crosspoints': crosspoints};
     }
     return {'value': false, 'crosspoints': null};
 };
-GraphUtils.isCrossOver = function (startPoint, endPoint, obstacle) {
-    //if (GraphUtils._isCrossOver(startPoint, endPoint, obstacle).value) {
-    //    // Loop through obstacle edges to find out if it real intersect with line
-    //    for (var i = 0; i < obstacle.vertexList.length; i++) {
-    //        //TODO
-    //    }
-    //}
-    return GraphUtils._isCrossOver(startPoint, endPoint, obstacle);
-};
-GraphUtils.prototype.getEdgesList = function () {
-    //TODO
-    return null;
-};
-GraphUtils.prototype.getVerticesList = function () {
-    //TODO
-    return null;
-};
+
 GraphUtils.prototype.getShortestPath = function (startPoint, endPoint) {
     var path = [];
     var graph = new Graph();
-    var crossoverObstacle = this.getCrossObstacles(startPoint, endPoint);
+    // Adjust startpoint
+    var validStartPoint;
+    for (var i = 0; i < this.obstaclesList.length; i++) {
+        if (GraphUtils.isAPointinAPolygon(startPoint.point, this.obstaclesList[i].polygon)){
+            validStartPoint = GraphUtils.findAnotherPointNoCollide(startPoint.point, this.obstaclesList[i]);
+            break;
+        }
+    }
+    // If startpoint is valid, remain the origin
+    if (!validStartPoint){
+        validStartPoint = startPoint.point;
+    } else {
+        console.log('found new point');
+        console.log('old' + startPoint.point);
+        console.log('new' + validStartPoint);
+    }
+    var crossoverObstacle = this.getCrossObstacles(new Vertex(validStartPoint.x, validStartPoint.y, 'start'), endPoint);
     // crossoverObstacle.length - 1 is the index of endpoint (as an obstacle)
     // check if endpoint is in the obstacle -> adjust
     var closestValidDestination;
@@ -190,41 +173,13 @@ GraphUtils.prototype.getShortestPath = function (startPoint, endPoint) {
         if (GraphUtils.isAPointinAPolygon(endPoint.point, this.obstaclesList[obs].polygon)) {
             console.log("inside");
             closestValidDestination = GraphUtils.getClosestValidDestination(endPoint.point, this.obstaclesList[obs]);
-
-            // Adjust
-            var offset = 5;
-            var case1 = new Phaser.Point(closestValidDestination.x + offset, closestValidDestination.y);
-            var case2 = new Phaser.Point(closestValidDestination.x - offset, closestValidDestination.y);
-            var case3 = new Phaser.Point(closestValidDestination.x, closestValidDestination.y + offset);
-            var case4 = new Phaser.Point(closestValidDestination.x, closestValidDestination.y - offset);
-
-            var cases = [case1, case2, case3, case4];
-            for (var c = 0; c < cases.length; c++) {
-                if (!GraphUtils.isAPointinAPolygon(cases[c], this.obstaclesList[obs].polygon)) {
-                    closestValidDestination = cases[c];
-                    break;
-                }
-            }
+            closestValidDestination = GraphUtils.findAnotherPointNoCollide(closestValidDestination, this.obstaclesList[obs]);
             console.log('closest' + closestValidDestination);
-            crossoverObstacle = this.getCrossObstacles(startPoint, new Vertex(closestValidDestination.x, closestValidDestination.y, 'end'));
+            crossoverObstacle = this.getCrossObstacles(new Vertex(validStartPoint.x, validStartPoint.y, 'start'), new Vertex(closestValidDestination.x, closestValidDestination.y, 'end'));
             break;
         }
     }
-    //if (closestValidDestination) {
-    //    crossoverObstacle.pop();
-    //    crossoverObstacle.push(new Obstacle([new Vertex(closestValidDestination.x, closestValidDestination.y - 10, 'end')]));
-    //} else {
-    //
-    //}
-    console.log(crossoverObstacle);
 
-    if (crossoverObstacle.length == 0) {
-        return [startPoint, endPoint];
-        console.log('bang khonog');
-    } else {
-        //TODO
-    }
-    //console.log(crossoverObstacle);
     GraphUtils.generate(graph, crossoverObstacle, this.obstaclesList);
     var result = graph.shortestPath('start', 'end');
     //TODO add push 0
@@ -232,7 +187,7 @@ GraphUtils.prototype.getShortestPath = function (startPoint, endPoint) {
     result.reverse();
 
     // Extract vertex from given data
-    path.push(startPoint);
+    path.push(new Vertex(validStartPoint.x, validStartPoint.y, 'start'));
     for (var vert = 1; vert < result.length - 1; vert++) {
         path.push(Data.vertexData[result[vert]]);
     }
@@ -424,6 +379,23 @@ GraphUtils.getClosestValidDestination = function (insidePoint, obstacle) {
         }
     }
     return result;
+};
+
+GraphUtils.findAnotherPointNoCollide = function(origin, obstacle) {
+    var offset = 5;
+    // Adjust
+    var case1 = new Phaser.Point(origin.x + offset, origin.y);
+    var case2 = new Phaser.Point(origin.x - offset, origin.y);
+    var case3 = new Phaser.Point(origin.x, origin.y + offset);
+    var case4 = new Phaser.Point(origin.x, origin.y - offset);
+
+    var cases = [case1, case2, case3, case4];
+    for (var c = 0; c < cases.length; c++) {
+        if (!GraphUtils.isAPointinAPolygon(cases[c], obstacle.polygon)) {
+            return cases[c];
+        }
+    }
+    return origin;
 };
 /////////////////////////////////////////////////////////////////////////////////////////
 
