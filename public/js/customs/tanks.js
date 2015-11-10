@@ -16,66 +16,6 @@ var lineGraphics;
 var graphics;
 var obstacleList;
 var graphUtil;
-
-
-//var ready = false;
-//var eurecaServer;
-//function eurecaClientSetup(){
-//    var eurecaClient = new Eureca.Client();
-//    eurecaClient.ready(function (serverProxy){
-//        eurecaServer = serverProxy;
-//
-//        // Get current player tank ID
-//        eurecaClient.exports.setPlayerTankId = function(id){
-//            playerTankId = id;
-//            create();
-//            eurecaServer.handshake();
-//            ready = true;
-//        };
-//
-//        // Kill the tank with the specified ID
-//        eurecaClient.exports.kill = function(id)
-//        {
-//            if (tanksList[id]) {
-//                tanksList[id].kill();
-//                console.log('> Killing ', id, tanksList[id]);
-//            }
-//        };
-//
-//        // Spawn a new enemy with the specified ID and position
-//        eurecaClient.exports.spawnEnemy = function(id, x, y){
-//            // Do not spawn yourself :v
-//            if (id == playerTankId) return;
-//
-//            console.log('> Spawning tank with id = ', id);
-//            // Add the new enemy to tanksList
-//            tanksList[id] = new EnemyTank(id, x, y, game, 'enemyTank', playerTank);
-//        };
-//
-//        // Update the state of a tank with the specified ID
-//        eurecaClient.exports.updateState = function(id, state){
-//            // TODO XIN
-//            if (tanksList[id])  {
-//                // Update the tank body
-//                tanksList[id].tank.x = state.x;
-//                tanksList[id].tank.y = state.y;
-//                tanksList[id].tank.angle = state.angle;
-//                // Update the turret
-//                tanksList[id].turret.x = state.x;
-//                tanksList[id].turret.y = state.y;
-//                tanksList[id].turret.rotation = state.rotation;
-//                // Update the shadow
-//                tanksList[id].shadow.x = state.x;
-//                tanksList[id].shadow.y = state.y;
-//                tanksList[id].shadow.angle = state.angle;
-//                // Move
-//                game.physics.arcade.moveToObject(tanksList[id].tank, new Phaser.Point(state.x, state.y), 120);
-//                tanksList[id].update();
-//            }
-//        }
-//    });
-//}
-
 game = new Phaser.Game(GAME_WIDTH, GAME_HEIGHT, Phaser.AUTO, 'tank-game', { preload: preload, create: create, update: update});
 
 /**
@@ -96,7 +36,8 @@ var Tank = function(id, x, y, game, tankSprite){
 
     this.tank = game.add.sprite(x, y, tankSprite, 'tank_body');
     this.tank.anchor.setTo(0.5, 0.5);
-    this.game.physics.arcade.enable(this.tank);
+    this.game.physics.p2.enable(this.tank);
+    this.tank.body.static = true;
     this.tank.body.collideWorldBounds = true;
 
     // Attach the turret to the tank
@@ -114,7 +55,11 @@ var Tank = function(id, x, y, game, tankSprite){
     // Bullets
     this.bullets = game.add.group();
     this.bullets.createMultiple(30, 'bullet', 0, false); // quantity, key, frame, isExist
-    this.game.physics.arcade.enable(this.bullets);
+    this.game.physics.p2.enable(this.bullets);
+    this.bullets.forEach(function(bullet){
+        bullet.body.static = true;
+    }, this);
+    this.bullets.applySpringForces = false;
     this.bullets.setAll('anchor.x', 0.5);
     this.bullets.setAll('anchor.y', 0.5);
     this.bullets.setAll('outOfBoundsKill', true);
@@ -158,7 +103,7 @@ PlayerTank.prototype.update = function(){
     this.shadow.x = this.tank.x;
     this.shadow.y = this.tank.y;
     this.shadow.angle = this.tank.angle;
-    this.turret.rotation = this.game.physics.arcade.angleToPointer(this.turret);
+    this.turret.rotation = angleToPointer(this.turret, this.game.input);
 
     // Fire on left click
     if (this.game.input.activePointer.leftButton.isDown)
@@ -173,9 +118,9 @@ PlayerTank.prototype.update = function(){
         var val1 = (this.desireAngle - this.tank.angle) / 10;
         var val2 = (this.tank.angle - this.desireAngle) / 10;
         if (Math.abs(val1) < Math.abs(val2)){
-            this.tank.angle += val1;
+            this.tank.body.angle += val1;
         } else {
-            this.tank.angle -= val2;
+            this.tank.body.angle -= val2;
         }
     } else {
         this.tank.angle = this.desireAngle;
@@ -196,32 +141,27 @@ PlayerTank.prototype.update = function(){
         this.finalDestination = calculatePath.des;
         // Update flag
         this.moveComplete = false;
-        this.game.physics.arcade.moveToObject(this.tank, this.path[0].point, 120);
-        //// TODO XIN
-        //eurecaServer.handleMovement({
-        //    x: desx,
-        //    y: desy,
-        //    angle: playerTank.desireAngle,
-        //    rotation: playerTank.turret.rotation
-        //});
+        moveToObject(this.tank, this.path[0].point, 120);
+
     }
     if (this.game.input.activePointer.rightButton.isUp && this.mouseUpFlag == false) {
         this.mouseUpFlag = true;
     }
     // reset moveComplete flag
-    if ( this.finalDestination != null && this.finalDestination.distance(new Phaser.Point(this.tank.x, this.tank.y)) <= 3) {
+    if (this.path && this.path.length == 0) {
         this.moveComplete = true;
     }
-    if (this.moveComplete && this.finalDestination != null) {
+    if (this.moveComplete) {
         this.finalDestination = null;
-        this.tank.body.velocity.set(0, 0);
+        this.tank.body.velocity.x = 0;
+        this.tank.body.velocity.y = 0;
     }
 
     if (this.path && this.path.length > 0 && this.path[0].point.distance(new Phaser.Point(this.tank.x, this.tank.y)) <= 3){
         this.path.shift();
     }
     if (this.path && this.path.length > 0){
-        this.game.physics.arcade.moveToObject(this.tank, this.path[0].point, 120);
+        moveToObject(this.tank, this.path[0].point, 120);
         this.desireAngle = Phaser.Point.angle(new Phaser.Point(this.tank.x, this.tank.y), this.path[0].point) * 180 / Math.PI;
     }
 };
@@ -230,8 +170,7 @@ PlayerTank.prototype.fire = function(){
         // Group.getFirstExists(isExist)
         var bullet = this.bullets.getFirstExists(false);
         bullet.reset(this.turret.x, this.turret.y);
-        // Physics.Arcade.moveToPointer(displayObject, speed (pixels/sec), pointer, maxTime (ms))
-        bullet.rotation = this.game.physics.arcade.moveToPointer(bullet, 1000, this.game.input.activePointer, 500);
+        bullet.body.rotation = moveToPointer(bullet, 1000, this.game.input.activePointer);
         this.fireTime = this.game.time.now;
     }
 };
@@ -264,10 +203,7 @@ EnemyTank.prototype.update = function(){
     this.shadow.x = this.tank.x;
     this.shadow.y = this.tank.y;
     this.shadow.angle = this.tank.angle;
-    this.turret.rotation = this.game.physics.arcade.angleBetween(this.tank, this.playerTank.tank);
-
-    this.game.physics.arcade.collide(this.playerTank.tank, this.tank);
-    this.game.physics.arcade.overlap(this.playerTank.bullets, this.tank, this.getShot, null, this);
+    this.turret.rotation = angleBetween(this.tank, this.playerTank.tank);
 };
 EnemyTank.prototype.getShot = function(tank, bullet){
     bullet.kill();
@@ -295,9 +231,8 @@ function preload(){
 
 function create(){
     game.world.setBounds(Data.MAP_DATA.startx, Data.MAP_DATA.starty, Data.MAP_DATA.width, Data.MAP_DATA.height);
-    game.physics.startSystem(Phaser.Physics.ARCADE);
-
-    var land = game.add.tileSprite(Data.MAP_DATA.startx, Data.MAP_DATA.starty, Data.MAP_DATA.width, Data.MAP_DATA.height, 'earth');
+    game.physics.startSystem(Phaser.Physics.P2JS);
+    game.add.tileSprite(Data.MAP_DATA.startx, Data.MAP_DATA.starty, Data.MAP_DATA.width, Data.MAP_DATA.height, 'earth');
 
     cursors = game.input.keyboard.createCursorKeys();
 
@@ -311,13 +246,17 @@ function create(){
     playerTank = new PlayerTank(playerTankId, playerTankInitialPos.x, playerTankInitialPos.y, game, 'playerTank', cursors);
     tanksList[playerTankId] = playerTank;
 
+    for (var i = 0; i < 3; i++){
+        var newEnemy = new EnemyTank('enemy', game.world.randomX, game.world.randomY, game, 'enemyTank', playerTank);
+    }
+
     explosions = game.add.group();
     for (var i = 0; i < NUM_OF_EXPLOSIONS; i++){
         var explosion = explosions.create(0, 0, 'explosion', 0, false);
         explosion.anchor.setTo(0.5, 0.5);
         explosion.animations.add('explode');
     }
-    // Disable deault right click handler
+    // Disable default right click handler
     game.canvas.oncontextmenu = function (e) {
         e.preventDefault();
     };
@@ -338,12 +277,9 @@ function create(){
 }
 
 function update(){
-    //if (!ready) return;
     for (var tank in tanksList){
         tanksList[tank].update();
     }
-    //console.log('> playerTank\'s position:');
-    //console.log('x: ' + playerTank.tank.x + ' - y: ' + playerTank.tank.y);
 }
 
 function drawPath(path, graphics) {
@@ -365,11 +301,4 @@ function drawGrid(graphics) {
             graphics.drawRect(x, y, tileStep, tileStep);
         }
     }
-    //graphics.beginFill(0xFFFF0B, 1);
-    //graphics.drawCircle(GAME_WIDTH / 2, GAME_HEIGHT / 2 - 20, 20);
-    //graphics.drawCircle(endx, endy, 10);
-    //graphics.drawCircle(startx, starty, 10);
-    //graphics.moveTo(startx, starty);
-    //graphics.lineTo(endx, endy);
-    //graphics.endFill();
 }
