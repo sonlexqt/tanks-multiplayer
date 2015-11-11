@@ -10,10 +10,10 @@ var DATA = [
     //[[160, 100], [200, 100], [200, 140], [320, 140], [320, 180], [160, 180]],
     //[[380, 340], [640, 340], [640, 380], [380, 380]],
     //
-    //[[0, 0], [MAP_DATA.width, 0], [MAP_DATA.width, 162], [0, 162]],
-    //[[1917, 0], [MAP_DATA.width, 0], [MAP_DATA.width, MAP_DATA.height], [1917, MAP_DATA.height]],
-    //[[0, 1930], [MAP_DATA.width, 1930], [MAP_DATA.width, MAP_DATA.height], [0, MAP_DATA.height]],
-    //[[0, 0], [154, 0], [154, MAP_DATA.height], [0, MAP_DATA.height]],
+    [[0, 0], [MAP_DATA.width, 0], [MAP_DATA.width, 162], [0, 162]],
+    [[1917, 0], [MAP_DATA.width, 0], [MAP_DATA.width, MAP_DATA.height], [1917, MAP_DATA.height]],
+    [[0, 1930], [MAP_DATA.width, 1930], [MAP_DATA.width, MAP_DATA.height], [0, MAP_DATA.height]],
+    [[0, 0], [154, 0], [154, MAP_DATA.height], [0, MAP_DATA.height]],
     [[538, 1596], [826, 1595], [827, 1983], [537, 1984]],
     [[1284, 1584], [1566, 1584], [1565, 1985], [1284, 1985]],
 
@@ -32,6 +32,35 @@ var DATA = [
 
     [[548, 65], [806, 67], [805, 462], [548, 464]],
     [[1293, 70], [1546, 70], [1547, 462], [1291, 461]]
+];
+var PLATFORM_DATA = [
+    [624, 1671, 110, 287],
+    [1371, 1670, 97, 297],
+    [291, 1333, 289, 98],
+    [374, 1208, 96, 95],
+    [1525, 1329, 287, 105],
+    [1638, 1207, 96, 97],
+    [110, 955, 99, 97],
+    [601, 957, 99, 97],
+    [887, 812, 52, 379],
+
+    [1158, 812, 64, 381],
+    [1408, 952, 98, 98],
+    [1864, 947, 97, 99],
+    [279, 595, 290, 103],
+    [355, 713, 101, 100],
+
+    [1507, 592, 292, 108],
+    [1616, 700, 103, 96],
+    [619, 103, 110, 294],
+    [1366, 103, 110, 294],
+
+    // Outline
+    [0, 0, 2059, 95],
+    [1962, 0, 97, 2070],
+    [0, 1976, 2059, 94],
+    [0, 0, 96, 2070]
+
 ];
 var Data = function () {
 };
@@ -60,4 +89,19 @@ Data.generateVertex = function (vertList) {
         Data.key++;
     }
     return vertexList;
+};
+
+Data.generatePlatforms = function (game, emptySprite, group) {
+    for (var i = 0; i < PLATFORM_DATA.length; i++) {
+        var data = PLATFORM_DATA[i];
+        var sprite = group.create(data[0], data[1], emptySprite);
+        sprite.width = data[2];
+        sprite.height = data[3];
+        if (Data.DEBUG){
+            sprite.alpha = 0.5;
+        } else {
+            sprite.alpha = 0;
+        }
+        sprite.body.immovable = true;
+    }
 };
