@@ -1,0 +1,36 @@
+.btn-select-game-mode{
+    width: 300px;
+    height: 100px;
+    display: block;
+    padding: 10px;
+    margin: 10px;
+    font-size: 25px;
+}
+
+#tank-menu-game-mode{
+    position: absolute;
+    top: 380px;
+    left: 100px;
+}
+
+#tank-menu-multiplayer-info{
+    position: absolute;
+    top: 380px;
+    left: 100px;
+    display: none;
+    text-align: center;
+}
+
+.btn-select-team{
+    width: 80px;
+    padding: 10px;
+    font-size: 20px;
+}
+
+#btn-start-multiplayer{
+    width: 160px;
+    height: 80px;
+    padding: 10px;
+    font-size: 30px;
+    margin-top: 28px;
+}

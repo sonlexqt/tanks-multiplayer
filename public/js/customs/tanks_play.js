@@ -5,6 +5,7 @@ var playerTankInitialPos = {
     x: 0,
     y: 0
 };
+var playerTankHPText;
 // Set of tanks
 var tanksList = {};
 var mouse;
@@ -35,7 +36,7 @@ function eurecaClientSetup() {
         eurecaClient.exports.setPlayerTankId = function (id) {
             playerTankId = id;
             _create();
-            eurecaServer.handshake(id, playerTankInitialPos);
+            eurecaServer.handshake(id, playerTankName, playerTankSelectedTeam, playerTankInitialPos);
             ready = true;
         };
 
@@ -48,13 +49,19 @@ function eurecaClientSetup() {
         };
 
         // Spawn a new enemy with the specified ID and position
-        eurecaClient.exports.spawnEnemy = function (id, x, y) {
+        eurecaClient.exports.spawnEnemy = function (id, name, teamNumber, x, y) {
             // Do not spawn yourself :v
             if (id == playerTankId) return;
 
             console.log('> Spawning tank with id = ', id);
             // Add the new enemy to tanksList
-            tanksList[id] = new EnemyTank(id, x, y, game, 'enemyTank', playerTank);
+            var tankSprite = (teamNumber == 1) ? 'blueTank' : 'redTank';
+            tanksList[id] = new OtherPlayerTank(id, name, teamNumber, x, y, game, tankSprite, playerTank);
+            console.log(tanksList[id]);
+            console.log('id: ' + id + ' - x: ' + x + ' - y: ' + y);
+            // Fix the new tank's position
+            tanksList[id].tank.x = x;
+            tanksList[id].tank.y = y;
         };
 
         // Update the state of a tank with the specified ID
@@ -83,23 +90,41 @@ function eurecaClientSetup() {
             }
         };
 
+        // Update tank hit bullets
+        eurecaClient.exports.updateTankHitBullets = function(tankHitBullet){
+            if (tanksList[tankHitBullet.id]){
+                var tank = tanksList[tankHitBullet.id].tank;
+                tank.tankObject.hp -= BULLET_DAMAGE;
+                if (tank.tankObject.hp <= 0) {
+                    var explosionAnimation = explosions.getFirstExists(false);
+                    explosionAnimation.reset(tank.x, tank.y);
+                    explosionAnimation.play('explode', 30, false, true);
+                    tank.tankObject.kill();
+                }
+            }
+        };
+
     });
 }
 
 /**
  * Abstract Tank class
  * @param id
+ * @param name
+ * @param teamNumber
  * @param x
  * @param y
  * @param game
  * @param tankSprite
  * @constructor
  */
-var Tank = function (id, x, y, game, tankSprite) {
+var Tank = function (id, name, teamNumber, x, y, game, tankSprite) {
     if (this.constructor === Tank) {
         throw new Error("Can't instantiate abstract class!");
     }
     this.id = id;
+    this.tankName = name;
+    this.teamNumber = teamNumber;
     this.game = game;
 
     this.tank = game.add.sprite(x, y, tankSprite, 'tank_body');
@@ -116,9 +141,20 @@ var Tank = function (id, x, y, game, tankSprite) {
     this.shadow = game.add.sprite(0, 0, tankSprite, 'tank_shadow');
     this.shadow.anchor.setTo(0.5, 0.5);
 
+    // Attach the tank name
+    this.tankNameText = game.add.text(0, 0, this.tankName, {
+        font: "15px Tahoma",
+        fill: "#000000",
+        align: "center"
+    });
+    this.tankNameText.anchor.setTo(0.5, -1.5);
+    this.tankNameText.stroke = "#ffffff";
+    this.tankNameText.strokeThickness = 3;
+
     // Bring the turret and the tank body to the front
     this.tank.bringToTop();
     this.turret.bringToTop();
+    this.tankNameText.bringToTop();
 
     // Other information (default value)
     this.coolDownTime = 500;
@@ -136,7 +172,7 @@ var Tank = function (id, x, y, game, tankSprite) {
     this.tank.tankObject = this;
 };
 
-var CPUTank = function (id, x, y, game, tankSprite) {
+var CPUTank = function (id, name, teamNumber, x, y, game, tankSprite) {
     Tank.apply(this, arguments);
     this.finalDestination = this.getTargetPosition();
     console.log(this.finalDestination);
@@ -248,17 +284,19 @@ CPUTank.prototype.kill = function () {
     this.shadow.kill();
     this.isDied = true;
 };
+
 /**
  * PlayerTank class
  * @param id
+ * @param name
+ * @param teamNumber
  * @param x
  * @param y
  * @param game
  * @param tankSprite
  * @constructor
  */
-
-var PlayerTank = function (id, x, y, game, tankSprite) {
+var PlayerTank = function (id, name, teamNumber, x, y, game, tankSprite) {
     Tank.apply(this, arguments);
 };
 
@@ -269,6 +307,8 @@ PlayerTank.prototype.update = function () {
     this.shadow.x = this.tank.x;
     this.shadow.y = this.tank.y;
     this.shadow.angle = this.tank.angle;
+    this.tankNameText.x = this.tank.x;
+    this.tankNameText.y = this.tank.y;
     this.turret.rotation = angleToPointer(this.turret, this.game.input);
 
     // Fire on left click
@@ -375,12 +415,15 @@ PlayerTank.prototype.kill = function () {
     this.tank.kill();
     this.turret.kill();
     this.shadow.kill();
+    this.tankNameText.kill();
     this.isDied = true;
 };
 
 /**
- * EnemyTank class
+ * OtherPlayerTank class
  * @param id
+ * @param name
+ * @param teamNumber
  * @param x
  * @param y
  * @param game
@@ -388,17 +431,19 @@ PlayerTank.prototype.kill = function () {
  * @param playerTank
  * @constructor
  */
-var EnemyTank = function (id, x, y, game, tankSprite, playerTank) {
+var OtherPlayerTank = function (id, name, teamNumber, x, y, game, tankSprite, playerTank) {
     Tank.apply(this, arguments);
     this.playerTank = playerTank;
 };
 
-EnemyTank.prototype.update = function () {
+OtherPlayerTank.prototype.update = function () {
     this.turret.x = this.tank.x;
     this.turret.y = this.tank.y;
     this.shadow.x = this.tank.x;
     this.shadow.y = this.tank.y;
     this.shadow.angle = this.tank.angle;
+    this.tankNameText.x = this.tank.x;
+    this.tankNameText.y = this.tank.y;
 
     // Adjust angle
     if (Math.abs(this.tank.angle - this.desireAngle) >= 5) {
@@ -433,25 +478,16 @@ EnemyTank.prototype.update = function () {
     for (var key in tanksList) {
         if (key != this.id) {
             this.game.physics.arcade.collide(tanksList[key].tank, this.tank);
-            //this.game.physics.arcade.overlap(this.tank, tanksList[key].tank, tankCollideTankHandler, null, this);
         }
     }
     game.physics.arcade.collide(this.tank, platforms);
 };
-EnemyTank.prototype.getShot = function (tank, bullet) {
-    bullet.kill();
-    tank.tankObject.hp -= BULLET_DAMAGE;
-    if (tank.tankObject.hp <= 0) {
-        var explosionAnimation = explosions.getFirstExists(false);
-        explosionAnimation.reset(tank.x, tank.y);
-        explosionAnimation.play('explode', 30, false, true);
-        tank.tankObject.kill();
-    }
-};
-EnemyTank.prototype.kill = function () {
+
+OtherPlayerTank.prototype.kill = function () {
     this.tank.kill();
     this.turret.kill();
     this.shadow.kill();
+    this.tankNameText.kill();
     this.isDied = true;
 };
 
@@ -522,10 +558,20 @@ function _create() {
         y: game.world.randomY
     };
 
-    playerTank = new PlayerTank(playerTankId, playerTankInitialPos.x, playerTankInitialPos.y, game, 'playerTank');
+    var tankSprite = (playerTankSelectedTeam == 1) ? 'blueTank' : 'redTank';
+    playerTank = new PlayerTank(playerTankId, playerTankName, playerTankSelectedTeam, playerTankInitialPos.x, playerTankInitialPos.y, game, tankSprite);
     tanksList[playerTankId] = playerTank;
+    // playerTankHPText
+    playerTankHPText = game.add.text(10, 10, 'Your HP: ' + tanksList[playerTankId].hp, {
+        font: "25px Tahoma",
+        fill: "#000000",
+        align: "center"
+    });
+    playerTankHPText.stroke = "#ffffff";
+    playerTankHPText.strokeThickness = 3;
+    playerTankHPText.fixedToCamera = true;
 
-    explosions = game.add.group();
+        explosions = game.add.group();
     for (var i = 0; i < NUM_OF_EXPLOSIONS; i++) {
         var explosion = explosions.create(0, 0, 'explosion', 0, false);
         explosion.anchor.setTo(0.5, 0.5);
@@ -539,8 +585,10 @@ function _create() {
     platforms.enableBody = true;
     Data.generatePlatforms(game, 'empty', platforms);
 
-    cpuTank = new CPUTank(123, 1039, 1850, game, 'playerTank');
+    cpuTank = new CPUTank(123, 'CPU', 2, 1039, 1850, game, 'redTank');
     cpuTankList[cpuTank.id] = cpuTank;
+
+    console.log('hehe')
 }
 
 function _update() {
@@ -560,19 +608,23 @@ function _update() {
     if (cpuTank) {
         cpuTank.update();
     }
+
+    // Update the text of current player's HP
+    if (tanksList[playerTankId]){
+        playerTankHPText.text = 'Your HP: ' + tanksList[playerTankId].hp;
+    }
 }
+
 function tankHitBullets(bullet, tank) {
     bullet.kill();
-    tank.tankObject.hp -= BULLET_DAMAGE;
-    if (tank.tankObject.hp <= 0) {
-        var explosionAnimation = explosions.getFirstExists(false);
-        explosionAnimation.reset(tank.x, tank.y);
-        explosionAnimation.play('explode', 30, false, true);
-        tank.tankObject.kill();
+    if (tank.tankObject.id == playerTankId){
+        eurecaServer.handleTankHitBullets({
+            id: playerTankId
+        });
     }
     delete bulletList[bullet.id];
-    console.log(bulletList);
 }
+
 function drawPath(path, graphics) {
     graphics.lineStyle(3, 0xFF0000, 1);
     graphics.beginFill(0xFF0000, 3);
