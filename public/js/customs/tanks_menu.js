@@ -6,14 +6,7 @@ var menuState = {
     create: function(){
         var self = this;
 
-        var nameLabel = game.add.text(80, 80, 'TANKS - MENU', {
-            font: '50px Arial',
-            fill: '#ffffff'
-        });
-        var startLabel = game.add.text(80, game.world.height - 80, 'Press SpaceBar to start', {
-            font: '25px Arial',
-            fill: '#ffffff'
-        });
+        AudioManager.playMainMusic();
 
         game.add.tileSprite(0, 0, GAME_WIDTH, GAME_HEIGHT, 'menuBackground');
 

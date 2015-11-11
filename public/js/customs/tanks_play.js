@@ -84,6 +84,8 @@ function eurecaClientSetup() {
                 var bullet = new Bullet(fireInfo.bulletInitialPos.x, fireInfo.bulletInitialPos.y, game, tanksList[fireInfo.tankId]);
                 bulletList[bullet.sprite.id] = bullet;
                 bullet.sprite.rotation = moveToPointer(bullet.sprite, 1000, fireInfo.pointer);
+                // Play bullet fire sound
+                AudioManager.playBulletSound(1);
             }
         };
 
@@ -97,6 +99,8 @@ function eurecaClientSetup() {
                     explosionAnimation.reset(tank.x, tank.y);
                     explosionAnimation.play('explode', 30, false, true);
                     tank.tankObject.kill();
+                    // Play bullet explosion sound
+                    AudioManager.playExplosionSound();
                 }
             }
         };

@@ -62,8 +62,6 @@ eurecaServer.exports.handshake = function(id, name, teamNumber, clientInitialPos
             y: clientInitialPos.y
         }
     };
-    console.log(id);
-    console.log(clients[id]);
     for (var c in clients){
         // Spawn this new client tank to all clients
         clients[c].remote.spawnEnemy(id, name, teamNumber, clientInitialPos.x, clientInitialPos.y);
