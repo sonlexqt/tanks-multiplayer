@@ -243,7 +243,7 @@ CPUTank.prototype.update = function () {
     for (var key in tanksList) {
         var tankPos = new Phaser.Point(this.tank.x, this.tank.y);
         var dis = tankPos.distance(new Phaser.Point(tanksList[key].tank.x, tanksList[key].tank.y));
-        if (dis <= 300 && this.teamNumber != tanksList[key].teamNumber) {
+        if (dis <= 300 && this.teamNumber != tanksList[key].teamNumber && !tanksList[key].isDied) {
             this.fireToTank(tanksList[key]);
         }
         this.game.physics.arcade.collide(tanksList[key].tank, this.tank, this.findNewPosition, null, this);
