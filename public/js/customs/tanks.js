@@ -90,8 +90,11 @@ var Tank = function (id, x, y, game, tankSprite) {
 
     this.tank = game.add.sprite(x, y, tankSprite, 'tank_body');
     this.tank.anchor.setTo(0.5, 0.5);
-    this.game.physics.p2.enable(this.tank);
-    this.tank.body.static = true;
+    this.game.physics.arcade.enable(this.tank);
+    //this.tank.body.static = true;
+    //this.tank.smoothed = false;
+    //this.tank.fixedRotation = true;
+    //this.tank.body.material = new Phaser.Physics.P2.Material();
     this.tank.body.collideWorldBounds = true;
 
     // Attach the turret to the tank
@@ -109,10 +112,10 @@ var Tank = function (id, x, y, game, tankSprite) {
     // Bullets
     this.bullets = game.add.group();
     this.bullets.createMultiple(30, 'bullet', 0, false); // quantity, key, frame, isExist
-    this.game.physics.p2.enable(this.bullets);
-    this.bullets.forEach(function (bullet) {
-        bullet.body.static = true;
-    }, this);
+    this.game.physics.arcade.enable(this.bullets);
+    //this.bullets.forEach(function (bullet) {
+    //    bullet.body.static = true;
+    //}, this);
     this.bullets.applySpringForces = false;
     this.bullets.setAll('anchor.x', 0.5);
     this.bullets.setAll('anchor.y', 0.5);
@@ -168,13 +171,13 @@ PlayerTank.prototype.update = function () {
     }
 
     // Adjust angle
-    if (Math.abs(this.tank.angle - this.desireAngle) >= 10) {
+    if (Math.abs(this.tank.angle - this.desireAngle) >= 5) {
         var val1 = (this.desireAngle - this.tank.angle) / 10;
         var val2 = (this.tank.angle - this.desireAngle) / 10;
         if (Math.abs(val1) < Math.abs(val2)) {
-            this.tank.body.angle += val1;
+            this.tank.angle += val1;
         } else {
-            this.tank.body.angle -= val2;
+            this.tank.angle -= val2;
         }
     } else {
         this.tank.angle = this.desireAngle;
@@ -216,8 +219,7 @@ PlayerTank.prototype.update = function () {
     }
     if (this.moveComplete) {
         this.finalDestination = null;
-        this.tank.body.velocity.x = 0;
-        this.tank.body.velocity.y = 0;
+        this.tank.body.velocity.set(0, 0);
     }
 
     if (this.path && this.path.length > 0 && this.path[0].point.distance(new Phaser.Point(this.tank.x, this.tank.y)) <= 3) {
@@ -275,9 +277,9 @@ EnemyTank.prototype.update = function () {
         var val1 = (this.desireAngle - this.tank.angle) / 10;
         var val2 = (this.tank.angle - this.desireAngle) / 10;
         if (Math.abs(val1) < Math.abs(val2)){
-            this.tank.body.angle += val1;
+            this.tank.angle += val1;
         } else {
-            this.tank.body.angle -= val2;
+            this.tank.angle -= val2;
         }
     } else {
         this.tank.angle = this.desireAngle;
@@ -289,8 +291,7 @@ EnemyTank.prototype.update = function () {
     }
     if (this.moveComplete) {
         this.finalDestination = null;
-        this.tank.body.velocity.x = 0;
-        this.tank.body.velocity.y = 0;
+        this.tank.body.velocity.set(0, 0);
     }
 
     if (this.path && this.path.length > 0 && this.path[0].point.distance(new Phaser.Point(this.tank.x, this.tank.y)) <= 3){
@@ -325,8 +326,8 @@ EnemyTank.prototype.kill = function () {
 var Bullet = function (x, y, game) {
     this.game = game;
     this.sprite = game.add.sprite(x, y, 'bullet');
-    game.physics.p2.enable(this.sprite);
-    this.sprite.body.static = true;
+    game.physics.arcade.enable(this.sprite);
+    //this.sprite.body.static = true;
 };
 
 
@@ -341,7 +342,8 @@ function preload() {
 function create() {
     game.world.setBounds(Data.MAP_DATA.startx, Data.MAP_DATA.starty, Data.MAP_DATA.width, Data.MAP_DATA.height);
     game.stage.disableVisibilityChange = true;
-    game.physics.startSystem(Phaser.Physics.P2JS);
+    game.physics.startSystem(Phaser.Physics.Arcade);
+    //game.physics.p2.setImpactEvents(true);
     game.add.tileSprite(Data.MAP_DATA.startx, Data.MAP_DATA.starty, Data.MAP_DATA.width, Data.MAP_DATA.height, 'earth');
 
     mouse = game.input.mouse;
@@ -379,6 +381,13 @@ function create() {
 
     game.camera.follow(playerTank.tank);
     game.camera.focusOnXY(playerTankInitialPos.x, playerTankInitialPos.y);
+
+    //for (var key in tanksList){
+    //    if (key != playerTankId) {
+    //        var contactMaterial = game.physics.p2.createContactMaterial(playerTank.tank.body.material, tanksList[key].tank.body.material);
+    //        contactMaterial.restitution = 0;
+    //    }
+    //}
 }
 
 function update(){
