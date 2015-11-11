@@ -281,6 +281,7 @@ PlayerTank.prototype.kill = function () {
     this.tank.kill();
     this.turret.kill();
     this.shadow.kill();
+    this.tankNameText.kill();
     this.isDied = true;
 };
 
@@ -360,6 +361,7 @@ OtherPlayerTank.prototype.kill = function () {
     this.tank.kill();
     this.turret.kill();
     this.shadow.kill();
+    this.tankNameText.kill();
     this.isDied = true;
 };
 
