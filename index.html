@@ -1,20 +1,42 @@
 <html>
 <head>
     <title> Assignment 5 - Valve Group </title>
-    <style>
-        #tank-game {
-            /*width: 800px;*/
-            /*margin: 0 auto;*/
-            /*margin-top: 50px;*/
-        }
-    </style>
+    <link rel="stylesheet" href="/public/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="/public/css/custom.css"/>
 </head>
 <body>
 <div id="tank-game">
 
 </div>
+
+<div class="container" id="tank-menu-game-mode">
+    <button class="btn btn-primary btn-select-game-mode" id="btn-single-player">Single Player</button>
+
+    <button class="btn btn-danger btn-select-game-mode" id="btn-multi-player">Multiplayer</button>
+</div>
+
+<div class="container well" id="tank-menu-multiplayer-info">
+    <div class="col-md-4">
+        <h1>Select your team</h1>
+        <button class="btn btn-primary btn-select-team" data-teamname="Blue" data-teamnumber="1" data-color="blue" id="btn-select-blue-team">Blue</button>
+        <button class="btn btn-danger btn-select-team" data-teamname="Red" data-teamnumber="2" data-color="red" id="btn-select-red-team">Red</button>
+        <h4 id="team-selection-notification">You selected <span id="span-selected-team-name" style="color: blue">Blue</span> team.</h4>
+    </div>
+    <div class="col-md-4">
+        <h1>Enter your name</h1>
+        <div class="form-group">
+            <input type="text" class="form-control" id="input-player-name">
+        </div>
+    </div>
+    <div class="col-md-4">
+        <button class="btn btn-success" id="btn-start-multiplayer">Start !</button>
+    </div>
+</div>
+
 <script src="/eureca.js"></script>
 
+<script src="/public/js/libs/jquery-1.11.3.min.js"></script>
+<script src="/public/js/libs/bootstrap.min.js"></script>
 <script src="/public/js/libs/phaser.js"></script>
 <script src="/public/js/customs/utils.js"></script>
 <script src="/public/js/customs/data.js"></script>

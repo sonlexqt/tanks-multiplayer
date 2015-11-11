@@ -32,7 +32,9 @@ eurecaServer.onConnect(function (connection) {
     var remote = eurecaServer.getClient(connection.id);
     clients[connection.id] = {
         id: connection.id,
-        remote: remote
+        remote: remote,
+        name: '',
+        teamNumber: 1
     };
     remote.setPlayerTankId(connection.id);
 });
@@ -49,7 +51,9 @@ eurecaServer.onDisconnect(function (conn) {
     }
 });
 
-eurecaServer.exports.handshake = function(id, clientInitialPos){
+eurecaServer.exports.handshake = function(id, name, teamNumber, clientInitialPos){
+    clients[id].name = name;
+    clients[id].teamNumber = teamNumber;
     var newClientRemote = clients[id].remote;
     clients[id].lastState = {
         destination: {
@@ -57,13 +61,15 @@ eurecaServer.exports.handshake = function(id, clientInitialPos){
             y: clientInitialPos.y
         }
     };
+    console.log(id);
+    console.log(clients[id]);
     for (var c in clients){
         // Spawn this new client tank to all clients
-        clients[c].remote.spawnEnemy(id, clientInitialPos.x, clientInitialPos.y);
+        clients[c].remote.spawnEnemy(id, name, teamNumber, clientInitialPos.x, clientInitialPos.y);
         // Spawn all clients tank to this new client
         if (clients[c].id !== id){
             if (clients[c].lastState && clients[c].lastState.destination){
-                newClientRemote.spawnEnemy(clients[c].id, clients[c].lastState.destination.x, clients[c].lastState.destination.y);
+                newClientRemote.spawnEnemy(clients[c].id, clients[c].name, clients[c].teamNumber, clients[c].lastState.destination.x, clients[c].lastState.destination.y);
             }
         }
     }
