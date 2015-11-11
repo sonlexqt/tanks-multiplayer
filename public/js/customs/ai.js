@@ -83,14 +83,18 @@ Obstacle.prototype.getRightVertex = function () {
 };
 var GraphUtils = function (obstaclesList) {
     this.obstaclesList = obstaclesList;
+    this.extraObstaclesList = [];
 };
-
+GraphUtils.prototype.setExtraObstaclesList = function(list){
+    this.extraObstaclesList = list;
+};
 GraphUtils.prototype.getCrossObstacles = function (startPoint, endPoint) {
     var crossObstacles = [];
+    var extraList = this.obstaclesList.concat(this.extraObstaclesList);
     // Loop through obstacle list
-    for (var i = 0; i < this.obstaclesList.length; i++) {
-        if (GraphUtils.isCrossOver(startPoint, endPoint, this.obstaclesList[i]).value) {
-            crossObstacles.push(this.obstaclesList[i]);
+    for (var i = 0; i < extraList.length; i++) {
+        if (GraphUtils.isCrossOver(startPoint, endPoint, extraList[i]).value) {
+            crossObstacles.push(extraList[i]);
         }
     }
     crossObstacles.sort(function (a, b) {
@@ -149,11 +153,12 @@ GraphUtils.isCrossOver = function (startPoint, endPoint, obstacle) {
 GraphUtils.prototype.getShortestPath = function (startPoint, endPoint) {
     var path = [];
     var graph = new Graph();
+    var etra = this.obstaclesList.concat(this.extraObstaclesList);
     // Adjust startpoint
     var validStartPoint;
-    for (var i = 0; i < this.obstaclesList.length; i++) {
-        if (GraphUtils.isAPointinAPolygon(startPoint.point, this.obstaclesList[i].polygon)){
-            validStartPoint = GraphUtils.findAnotherPointNoCollide(startPoint.point, this.obstaclesList[i]);
+    for (var i = 0; i < etra.length; i++) {
+        if (GraphUtils.isAPointinAPolygon(startPoint.point, etra[i].polygon)){
+            validStartPoint = GraphUtils.findAnotherPointNoCollide(startPoint.point, etra[i]);
             break;
         }
     }
@@ -169,18 +174,18 @@ GraphUtils.prototype.getShortestPath = function (startPoint, endPoint) {
     // crossoverObstacle.length - 1 is the index of endpoint (as an obstacle)
     // check if endpoint is in the obstacle -> adjust
     var closestValidDestination;
-    for (var obs = 0; obs < this.obstaclesList.length; obs++) {
-        if (GraphUtils.isAPointinAPolygon(endPoint.point, this.obstaclesList[obs].polygon)) {
+    for (var obs = 0; obs < etra.length; obs++) {
+        if (GraphUtils.isAPointinAPolygon(endPoint.point, etra[obs].polygon)) {
             console.log("inside");
-            closestValidDestination = GraphUtils.getClosestValidDestination(endPoint.point, this.obstaclesList[obs]);
-            closestValidDestination = GraphUtils.findAnotherPointNoCollide(closestValidDestination, this.obstaclesList[obs]);
+            closestValidDestination = GraphUtils.getClosestValidDestination(endPoint.point, etra[obs]);
+            closestValidDestination = GraphUtils.findAnotherPointNoCollide(closestValidDestination, etra[obs]);
             console.log('closest' + closestValidDestination);
             crossoverObstacle = this.getCrossObstacles(new Vertex(validStartPoint.x, validStartPoint.y, 'start'), new Vertex(closestValidDestination.x, closestValidDestination.y, 'end'));
             break;
         }
     }
 
-    GraphUtils.generate(graph, crossoverObstacle, this.obstaclesList);
+    GraphUtils.generate(graph, crossoverObstacle, etra);
     var result = graph.shortestPath('start', 'end');
     //TODO add push 0
     result.push("start");
@@ -396,6 +401,22 @@ GraphUtils.findAnotherPointNoCollide = function(origin, obstacle) {
         }
     }
     return origin;
+};
+GraphUtils.prototype.getARandomValidPosition = function(){
+    var result = null;
+    while (result == null) {
+        var x = 144 + Math.random() * 1755;
+        var y = 149 + Math.random() * 1761
+        var newPoint = new Phaser.Point(x, y);
+        var extra = this.obstaclesList.concat(this.setExtraObstaclesList);
+        for (var obs = 0; obs< extra.length; obs++) {
+            if (!GraphUtils.isAPointinAPolygon(newPoint, extra[obs].polygon)){
+                result = newPoint;
+                break;
+            }
+        }
+    }
+    return result;
 };
 /////////////////////////////////////////////////////////////////////////////////////////
 
