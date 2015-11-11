@@ -9,6 +9,7 @@ var loadState = {
         game.load.image('menuBackground', '/public/assets/images/menu-background.jpg');
         game.load.image('hpitem', '/public/assets/images/item1.png');
         game.load.image('weaponitem', '/public/assets/images/item2.png');
+        game.load.image('gamename', '/public/assets/images/game-name.png')
     },
     create: function(){
         game.stage.disableVisibilityChange = true;

@@ -16,7 +16,11 @@ var menuState = {
         });
 
         game.add.tileSprite(0, 0, GAME_WIDTH, GAME_HEIGHT, 'menuBackground');
-
+        var name = game.add.sprite(GAME_WIDTH/2, 100, 'gamename');
+        var ratio = GAME_WIDTH / 1300;
+        name.width = name.width * ratio;
+        name.height = name.height * ratio;
+        name.anchor.setTo(0.5, 0.5);
         $('#btn-single-player').click(function(){
             gameMode = 'singleplayer';
             self.startSinglePlayer();
