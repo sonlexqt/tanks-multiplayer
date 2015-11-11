@@ -17,7 +17,8 @@ var eurecaServer = new eureca.Server({
         'kill',
         'spawnEnemy',
         'updateMovement',
-        'updateFire'
+        'updateFire',
+        'updateTankHitBullets'
     ]
 });
 // Set of clients
@@ -84,6 +85,12 @@ eurecaServer.exports.handleMovement = function (newState) {
         remote.updateMovement(updatedClient.id, newState);
         //keep last known state so we can send it to new connected clients
         clients[c].lastState = newState;
+    }
+};
+
+eurecaServer.exports.handleTankHitBullets = function(id){
+    for (var c in clients){
+        clients[c].remote.updateTankHitBullets(id);
     }
 };
 
