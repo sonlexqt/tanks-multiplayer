@@ -211,7 +211,7 @@ PlayerTank.prototype.update = function () {
         this.finalDestination = calculatePath.des;
         // Update flag
         this.moveComplete = false;
-        moveToObject(this.tank, this.path[0].point, 120);
+        moveToObject(this.tank, this.path[0].point, Data.tank_velocity);
         // Send movement information to server
         eurecaServer.handleMovement({
             destination: {
@@ -238,7 +238,7 @@ PlayerTank.prototype.update = function () {
         this.path.shift();
     }
     if (this.path && this.path.length > 0) {
-        moveToObject(this.tank, this.path[0].point, 120);
+        moveToObject(this.tank, this.path[0].point, Data.tank_velocity);
         this.desireAngle = Phaser.Point.angle(new Phaser.Point(this.tank.x, this.tank.y), this.path[0].point) * 180 / Math.PI;
     }
 
@@ -307,7 +307,7 @@ EnemyTank.prototype.update = function () {
         this.path.shift();
     }
     if (this.path && this.path.length > 0) {
-        moveToObject(this.tank, this.path[0].point, 120);
+        moveToObject(this.tank, this.path[0].point, Data.tank_velocity);
         this.desireAngle = Phaser.Point.angle(new Phaser.Point(this.tank.x, this.tank.y), this.path[0].point) * 180 / Math.PI;
     }
 
