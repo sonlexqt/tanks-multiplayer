@@ -405,8 +405,8 @@ GraphUtils.findAnotherPointNoCollide = function(origin, obstacle) {
 GraphUtils.prototype.getARandomValidPosition = function(){
     var result = null;
     while (result == null) {
-        var x = 144 + Math.random() * 1755;
-        var y = 149 + Math.random() * 1761
+        var x = Math.round(144 + Math.random() * 1755);
+        var y = Math.round(149 + Math.random() * 1761);
         var newPoint = new Phaser.Point(x, y);
         var extra = this.obstaclesList.concat(this.setExtraObstaclesList);
         for (var obs = 0; obs< extra.length; obs++) {

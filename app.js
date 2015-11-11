@@ -88,9 +88,9 @@ eurecaServer.exports.handleMovement = function (newState) {
     }
 };
 
-eurecaServer.exports.handleTankHitBullets = function(id){
+eurecaServer.exports.handleTankHitBullets = function(bulletInfo){
     for (var c in clients){
-        clients[c].remote.updateTankHitBullets(id);
+        clients[c].remote.updateTankHitBullets(bulletInfo);
     }
 };
 

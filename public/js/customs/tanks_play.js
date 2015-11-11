@@ -6,6 +6,7 @@ var playerTankInitialPos = {
     y: 0
 };
 var playerTankHPText;
+var playerTankLevel;
 // Set of tanks
 var tanksList = {};
 var mouse;
@@ -14,18 +15,21 @@ var NUM_OF_EXPLOSIONS = 10;
 var explosions;
 // Bullets
 var bulletList = {};
-var BULLET_DAMAGE = 1;
+var BULLET_DAMAGE = 10;
 //TODO remove after finish
 var lineGraphics;
 var graphics;
 var obstacleList;
 var graphUtil;
 var platforms;
+var hpItems;
+var weaponItems;
 
 var ready = false; // ready = "is connected to server ?"
 var eurecaServer;
 var cpuTank;
 var cpuTankList = {};
+
 
 function eurecaClientSetup() {
     var eurecaClient = new Eureca.Client();
@@ -91,19 +95,33 @@ function eurecaClientSetup() {
         };
 
         // Update tank hit bullets
-        eurecaClient.exports.updateTankHitBullets = function(tankHitBullet){
-            if (tanksList[tankHitBullet.id]){
-                var tank = tanksList[tankHitBullet.id].tank;
-                tank.tankObject.hp -= BULLET_DAMAGE;
+        eurecaClient.exports.updateTankHitBullets = function (bulletInfo) {
+            if (tanksList[bulletInfo.tankId]) {
+                var tank = tanksList[bulletInfo.tankId].tank;
+                if (BULLET_DAMAGE - 2 * tank.tankObject.level > 1){
+                    tank.tankObject.hp -= (BULLET_DAMAGE - 2 * tank.tankObject.level);
+                } else {
+                    tank.tankObject.hp -= 1;
+                }
                 if (tank.tankObject.hp <= 0) {
                     var explosionAnimation = explosions.getFirstExists(false);
                     explosionAnimation.reset(tank.x, tank.y);
                     explosionAnimation.play('explode', 30, false, true);
                     tank.tankObject.kill();
+                    tanksList[bulletInfo.ownerId].level++;
+                }
+            } else if (cpuTankList[bulletInfo.tankId]) {
+                var tank = tanksList[bulletInfo.tankId].tank;
+                tank.tankObject.hp -= BULLET_DAMAGE
+                if (tank.tankObject.hp <= 0) {
+                    var explosionAnimation = explosions.getFirstExists(false);
+                    explosionAnimation.reset(tank.x, tank.y);
+                    explosionAnimation.play('explode', 30, false, true);
+                    tank.tankObject.kill();
+                    tanksList[bulletInfo.ownerId].level++;
                 }
             }
         };
-
     });
 }
 
@@ -159,7 +177,8 @@ var Tank = function (id, name, teamNumber, x, y, game, tankSprite) {
     // Other information (default value)
     this.coolDownTime = 500;
     this.fireTime = 0;
-    this.hp = 10;
+    this.hp = 100;
+    this.level = 0;
     this.isDied = false;
 
     // HIEU
@@ -180,15 +199,13 @@ var CPUTank = function (id, name, teamNumber, x, y, game, tankSprite) {
     var y = Math.round(this.tank.y);
     var calculatePath = graphUtil.getShortestPath(new Vertex(x, y, 'start'), new Vertex(this.finalDestination.x, this.finalDestination.y, 'end'));
     this.path = calculatePath.path;
-    //this.path = null;
-    this.path = [new Vertex(this.finalDestination.x, this.finalDestination.y, 'end')];
     if (Data.DEBUG) {
         drawPath(this.path, lineGraphics);
     }
 
     this.coolDownTime = 500;
     this.fireTime = 0;
-    this.hp = 10;
+    this.hp = 5;
     this.isDied = false;
 };
 CPUTank.prototype = Object.create(Tank);
@@ -409,6 +426,8 @@ PlayerTank.prototype.update = function () {
         }
     }
     game.physics.arcade.collide(this.tank, platforms);
+    game.physics.arcade.overlap(this.tank, hpItems, onHitHPItem, null, this);
+    game.physics.arcade.overlap(this.tank, weaponItems, onHitWeaponItem, null, this);
 };
 
 PlayerTank.prototype.kill = function () {
@@ -481,6 +500,8 @@ OtherPlayerTank.prototype.update = function () {
         }
     }
     game.physics.arcade.collide(this.tank, platforms);
+    game.physics.arcade.overlap(this.tank, hpItems, onHitHPItem, null, this);
+    game.physics.arcade.overlap(this.tank, weaponItems, onHitWeaponItem, null, this);
 };
 
 OtherPlayerTank.prototype.kill = function () {
@@ -506,6 +527,7 @@ var Bullet = function (x, y, game, tank) {
     this.isKilled = false;
     this.index = 0;
     this.sprite.id = ++Bullet.id;
+    this.sprite.bulletObject = this;
 };
 Bullet.id = 0;
 Bullet.prototype.hit = function () {
@@ -567,11 +589,21 @@ function _create() {
         fill: "#000000",
         align: "center"
     });
+
     playerTankHPText.stroke = "#ffffff";
     playerTankHPText.strokeThickness = 3;
     playerTankHPText.fixedToCamera = true;
 
-        explosions = game.add.group();
+    playerTankLevel = game.add.text(500, 10, 'Your Level: ' + tanksList[playerTankId].level, {
+        font: "25px Tahoma",
+        fill: "#000000",
+        align: "center"
+    });
+    playerTankLevel.stroke = "#ffffff";
+    playerTankLevel.strokeThickness = 3;
+    playerTankLevel.fixedToCamera = true;
+
+    explosions = game.add.group();
     for (var i = 0; i < NUM_OF_EXPLOSIONS; i++) {
         var explosion = explosions.create(0, 0, 'explosion', 0, false);
         explosion.anchor.setTo(0.5, 0.5);
@@ -588,7 +620,15 @@ function _create() {
     cpuTank = new CPUTank(123, 'CPU', 2, 1039, 1850, game, 'redTank');
     cpuTankList[cpuTank.id] = cpuTank;
 
-    console.log('hehe')
+    hpItems = game.add.group();
+    hpItems.enableBody = true;
+    createNewHPItem(197, 196);
+    createNewHPItem(1633, 1630);
+
+    weaponItems = game.add.group();
+    weaponItems.enableBody = true;
+    createNewWeaponItem(1625, 196);
+    createNewWeaponItem(170, 1676);
 }
 
 function _update() {
@@ -610,16 +650,50 @@ function _update() {
     }
 
     // Update the text of current player's HP
-    if (tanksList[playerTankId]){
+    if (tanksList[playerTankId]) {
         playerTankHPText.text = 'Your HP: ' + tanksList[playerTankId].hp;
+        playerTankLevel.text = 'Your Level: ' + tanksList[playerTankId].level;
+    }
+
+    if (hpItems && hpItems.length < 1) {
+        var pos = Math.round(Math.random() * 4);
+        var x, y;
+        switch (pos){
+            case 0:
+            {
+                x = Math.round(177 + Math.random() * 323);
+                y = Math.round(162 + Math.random() * 317);
+                break;
+            }
+            case 1:
+            {
+                x = Math.round(1590 + Math.random() * 283);
+                y = Math.round(174 + Math.random() * 326);
+                break;
+            }
+            case 2:
+            {
+                x = Math.round(1592 + Math.random() * 298);
+                y = Math.round(1567 + Math.random() * 321);
+                break;
+            }
+            case 3:
+            {
+                x = Math.round(174 + Math.random() * 356);
+                y = Math.round(1538 + Math.random() * 346);
+                break;
+            }
+        }
+        createNewHPItem(x - 86, y - 86);
     }
 }
 
 function tankHitBullets(bullet, tank) {
     bullet.kill();
-    if (tank.tankObject.id == playerTankId){
+    if (tank.tankObject.id == playerTankId) {
         eurecaServer.handleTankHitBullets({
-            id: playerTankId
+            tankId: playerTankId,
+            ownerId: bullet.bulletObject.tank.id
         });
     }
     delete bulletList[bullet.id];
@@ -663,4 +737,28 @@ var bulletHitPlatform = function (bullet, platform) {
     explosionAnimation.play('explode', 30, false, true);
     delete bulletList[bullet.id];
     console.log('hit platform');
+};
+
+var createNewHPItem = function(x, y){
+    var item = hpItems.create(x, y, 'hpitem');
+    item.body.setSize(50, 49, 78 ,73);
+    item.body.immovable = true;
+};
+
+var createNewWeaponItem = function(x, y){
+    var item = weaponItems.create(x, y, 'weaponitem');
+    item.body.setSize(47, 54, 115 ,59);
+    item.body.immovable = true;
+};
+
+var onHitHPItem = function(tank, item) {
+    tank.tankObject.hp += 10;
+    item.kill();
+    hpItems.remove(item);
+};
+
+var onHitWeaponItem = function(tank, item) {
+    tank.tankObject.level += 1;
+    item.kill();
+    weaponItems.remove(item);
 };
