@@ -32,6 +32,9 @@ var loadState = {
         game.load.image('empty', '/public/assets/images/empty.png');
         game.load.spritesheet('explosion', '/public/assets/images/explosion.png', 64, 64, 23);
         game.load.image('menuBackground', '/public/assets/images/menu-background.jpg');
+        game.load.image('hpitem', '/public/assets/images/item1.png');
+        game.load.image('weaponitem', '/public/assets/images/item2.png');
+        game.load.image('gamename', '/public/assets/images/game-name.png')
         // Audio
         game.load.audio('mainMusic', '/public/assets/audio/main-music.ogg');
         game.load.audio('bulletSound1', '/public/assets/audio/bullet-sound-1.ogg');

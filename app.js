@@ -90,7 +90,7 @@ eurecaServer.exports.handshake = function(id, name, teamNumber, clientInitialPos
         clients[c].remote.spawnNewTank(id, name, teamNumber, clientInitialPos.x, clientInitialPos.y);
         // Spawn all clients tank to this new client
         if (clients[c].id !== id){
-            if (clients[c].lastState && clients[c].lastState.destination){
+            if (clients[c].isDied == false && clients[c].lastState && clients[c].lastState.destination){
                 newClientRemote.spawnNewTank(clients[c].id, clients[c].name, clients[c].teamNumber, clients[c].lastState.destination.x, clients[c].lastState.destination.y);
             }
         }
@@ -124,9 +124,9 @@ eurecaServer.exports.handleCPUMovement = function(newState){
     }
 };
 
-eurecaServer.exports.handleTankHitBullets = function(id){
+eurecaServer.exports.handleTankHitBullets = function(bulletInfo){
     for (var c in clients){
-        clients[c].remote.updateTankHitBullets(id);
+        clients[c].remote.updateTankHitBullets(bulletInfo);
     }
 };
 
