@@ -259,7 +259,7 @@ var CPUTank = function (id, name, teamNumber, x, y, game, tankSprite) {
 
     this.coolDownTime = 1500;
     this.fireTime = 0;
-    this.hp = 10;
+    this.hp = 50;
     this.isDied = false;
 };
 CPUTank.prototype = Object.create(Tank);
@@ -473,9 +473,7 @@ PlayerTank.prototype.update = function () {
         this.finalDestination = calculatePath.des;
         // Update flag
         this.moveComplete = false;
-        moveToObject(this.tank, this.path[0].point, Data.tank_velocity);
         // Send movement information to server
-
         eurecaServer.handleMovement({
             destination: {
                 x: desx,
@@ -484,6 +482,8 @@ PlayerTank.prototype.update = function () {
             path: this.path,
             desireAngle: this.desireAngle
         });
+
+        moveToObject(this.tank, this.path[0].point, Data.tank_velocity);
 
         if (Data.DEBUG) {
             drawPath(this.path, lineGraphics);
