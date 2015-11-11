@@ -1,6 +1,3 @@
-var GAME_WIDTH = window.innerWidth;
-var GAME_HEIGHT = window.innerHeight;
-
 // Current player's tank information
 var playerTank;
 var playerTankId = 0;
@@ -23,10 +20,9 @@ var graphics;
 var obstacleList;
 var graphUtil;
 
-game = new Phaser.Game(GAME_WIDTH, GAME_HEIGHT, Phaser.AUTO, 'tank-game', { preload: preload, create: eurecaClientSetup, update: update});
-
-var ready = false;
+var ready = false; // ready = "is connected to server ?"
 var eurecaServer;
+
 function eurecaClientSetup(){
     var eurecaClient = new Eureca.Client();
     eurecaClient.ready(function (serverProxy){
@@ -35,7 +31,7 @@ function eurecaClientSetup(){
         // Get current player tank ID
         eurecaClient.exports.setPlayerTankId = function(id){
             playerTankId = id;
-            create();
+            _create();
             eurecaServer.handshake(id, playerTankInitialPos);
             ready = true;
         };
@@ -308,8 +304,6 @@ EnemyTank.prototype.update = function () {
         this.desireAngle = Phaser.Point.angle(new Phaser.Point(this.tank.x, this.tank.y), this.path[0].point) * 180 / Math.PI;
     }
 
-    //this.game.physics.arcade.collide(this.playerTank.tank, this.tank);
-    //this.game.physics.arcade.overlap(this.playerTank.bullets, this.tank, this.getShot, null, this);
 };
 EnemyTank.prototype.getShot = function (tank, bullet) {
     bullet.kill();
@@ -342,41 +336,10 @@ Bullet.prototype.kill = function(){
     this.isKilled = true;
 };
 
-function preload() {
-    game.load.image('earth', '/public/assets/images/tank_map.png');
-    game.load.atlas('playerTank', '/public/assets/images/red_tank.png', '/public/assets/images/red_tank.json');
-    game.load.atlas('enemyTank', '/public/assets/images/blue_tank.png', '/public/assets/images/blue_tank.json');
-    game.load.image('bullet', '/public/assets/images/bullet.png');
-    game.load.spritesheet('explosion', '/public/assets/images/explosion.png', 64, 64, 23);
-}
-
-function create() {
+function _create() {
     game.world.setBounds(Data.MAP_DATA.startx, Data.MAP_DATA.starty, Data.MAP_DATA.width, Data.MAP_DATA.height);
-    game.stage.disableVisibilityChange = true;
-    game.physics.startSystem(Phaser.Physics.P2JS);
     game.add.tileSprite(Data.MAP_DATA.startx, Data.MAP_DATA.starty, Data.MAP_DATA.width, Data.MAP_DATA.height, 'earth');
 
-    mouse = game.input.mouse;
-
-    playerTankInitialPos = {
-        x: game.world.randomX,
-        y: game.world.randomY
-    };
-
-    playerTank = new PlayerTank(playerTankId, playerTankInitialPos.x, playerTankInitialPos.y, game, 'playerTank');
-    tanksList[playerTankId] = playerTank;
-
-
-    explosions = game.add.group();
-    for (var i = 0; i < NUM_OF_EXPLOSIONS; i++) {
-        var explosion = explosions.create(0, 0, 'explosion', 0, false);
-        explosion.anchor.setTo(0.5, 0.5);
-        explosion.animations.add('explode');
-    }
-    // Disable default right click handler
-    game.canvas.oncontextmenu = function (e) {
-        e.preventDefault();
-    };
     // Obstacle
     lineGraphics = game.add.graphics(0, 0);
     graphics = game.add.graphics(0, 0);
@@ -389,11 +352,28 @@ function create() {
     }
     graphUtil = new GraphUtils(obstacleList);
 
+    mouse = game.input.mouse;
+
+    playerTankInitialPos = {
+        x: game.world.randomX,
+        y: game.world.randomY
+    };
+
+    playerTank = new PlayerTank(playerTankId, playerTankInitialPos.x, playerTankInitialPos.y, game, 'playerTank');
+    tanksList[playerTankId] = playerTank;
+
+    explosions = game.add.group();
+    for (var i = 0; i < NUM_OF_EXPLOSIONS; i++) {
+        var explosion = explosions.create(0, 0, 'explosion', 0, false);
+        explosion.anchor.setTo(0.5, 0.5);
+        explosion.animations.add('explode');
+    }
+
     game.camera.follow(playerTank.tank);
     game.camera.focusOnXY(playerTankInitialPos.x, playerTankInitialPos.y);
 }
 
-function update(){
+function _update(){
     for (var tank in tanksList){
         if (!tanksList[tank].isDied){
             tanksList[tank].update();
@@ -421,3 +401,12 @@ function drawGrid(graphics) {
         }
     }
 }
+
+var playState = {
+    create: function(){
+        eurecaClientSetup();
+    },
+    update: function(){
+        _update();
+    }
+};

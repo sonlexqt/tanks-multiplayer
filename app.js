@@ -28,7 +28,7 @@ eurecaServer.attach(server);
 
 // Detect client connection
 eurecaServer.onConnect(function (connection) {
-    console.log('> New Client id=%s ', connection.id, connection.remoteAddress);
+    console.log('(i) New Client id=%s ', connection.id, connection.remoteAddress);
     var remote = eurecaServer.getClient(connection.id);
     clients[connection.id] = {
         id: connection.id,
@@ -39,7 +39,7 @@ eurecaServer.onConnect(function (connection) {
 
 // Detect client disconnection
 eurecaServer.onDisconnect(function (conn) {
-    console.log('> Client disconnected ', conn.id);
+    console.log('/!\\ Client disconnected ', conn.id);
     delete clients[conn.id];
     for (var c in clients)
     {
