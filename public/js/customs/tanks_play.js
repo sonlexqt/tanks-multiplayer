@@ -12,6 +12,7 @@ var playerTankLevel;
 var tanksList = {};
 var blueTeamTanks = 0;
 var redTeamTanks = 0;
+var donePreparingCPUTanks = false;
 // TODO
 var playerInitialCPUTanks = 2;
 var mouse;
@@ -724,6 +725,25 @@ function _create() {
         eurecaServer.handleSpawnCPUTank(cpuTankId, cpuTankName, playerTankSelectedTeam, cpuTankInitialPos);
     }
 
+    // CPU Tanks
+    if (gameMode == 'singleplayer'){
+        for (var i = 0; i < 3; i ++){
+            var cpuTankId = 'team2' + '-' + Date.now();
+            var cpuTankName = 'CPU-2' + '(' + i + ')';
+            var cpuTankInitialPos = (playerTankSelectedTeam == 1) ? {
+                x: Math.round(719 + Math.random() * 647),
+                y: Math.round(1500 + Math.random() * 108)
+            }:{
+                x: Math.round(750 + Math.random() * 598),
+                y: Math.round(469 + Math.random() * 102)
+            };
+            var cpuTank = new CPUTank(cpuTankId, cpuTankName, 2, cpuTankInitialPos.x, cpuTankInitialPos.y, game, 'redTank');
+            tanksList[cpuTankId] = cpuTank;
+            eurecaServer.handleSpawnCPUTank(cpuTankId, cpuTankName, 2, cpuTankInitialPos);
+        }
+    }
+
+
 
     hpItems = game.add.group();
     hpItems.enableBody = true;
@@ -763,6 +783,10 @@ function _update() {
         if (!tanksList[tank].isDied) {
             tanksList[tank].update();
         }
+    }
+
+    if (redTeamTanks == 3){
+        donePreparingCPUTanks = true;
     }
 
     for (var bullet in bulletList) {
@@ -822,6 +846,10 @@ function _update() {
     }
     if (playerTank && playerTank.hp <= 0) {
         game.state.start('defeat');
+    }
+
+    if (gameMode == 'singleplayer' && redTeamTanks <= 0 && donePreparingCPUTanks){
+        game.state.start('victory');
     }
 }
 
