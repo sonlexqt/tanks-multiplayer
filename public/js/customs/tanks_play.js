@@ -670,36 +670,6 @@ function _create() {
     };
     playerTank = new PlayerTank(playerTankId, playerTankName, playerTankSelectedTeam, playerTankInitialPos.x, playerTankInitialPos.y, game, tankSprite);
     tanksList[playerTankId] = playerTank;
-    // playerTankHPText
-    playerTankHPText = game.add.text(10, 10, 'Your HP: ' + tanksList[playerTankId].hp, {
-        font: "25px Tahoma",
-        fill: "#000000",
-        align: "center"
-    });
-
-    playerTankHPText.stroke = "#ffffff";
-    playerTankHPText.strokeThickness = 3;
-    playerTankHPText.fixedToCamera = true;
-
-    playerTankLevel = game.add.text(window.innerWidth / 3, 10, 'Your Level: ' + tanksList[playerTankId].level, {
-        font: "25px Tahoma",
-        fill: "#000000",
-        align: "center"
-    });
-    playerTankLevel.stroke = "#ffffff";
-    playerTankLevel.strokeThickness = 3;
-    playerTankLevel.fixedToCamera = true;
-
-    // scoreText
-    updateScore();
-    scoreText = game.add.text(window.innerWidth / 3 * 2, 10, 'BLUE: ' + blueTeamTanks + ' - RED: ' + redTeamTanks, {
-        font: "25px Tahoma",
-        fill: "#000000",
-        align: "center"
-    });
-    scoreText.stroke = "#ffffff";
-    scoreText.strokeThickness = 3;
-    scoreText.fixedToCamera = true;
 
     explosions = game.add.group();
     for (var i = 0; i < NUM_OF_EXPLOSIONS; i++) {
@@ -740,6 +710,28 @@ function _create() {
     weaponItems.enableBody = true;
     createNewWeaponItem(1625, 196);
     createNewWeaponItem(170, 1676);
+
+    // playerTankHPText
+    playerTankHPText = game.add.text(10, 10, 'Your HP: ' + tanksList[playerTankId].hp, {
+        font: "25px Tahoma",
+        fill: "#000000",
+        align: "center"
+    });
+
+
+
+    playerTankHPText.stroke = "#ffffff";
+    playerTankHPText.strokeThickness = 3;
+    playerTankHPText.fixedToCamera = true;
+
+    playerTankLevel = game.add.text(window.innerWidth / 3, 10, 'Your Level: ' + tanksList[playerTankId].level, {
+        font: "25px Tahoma",
+        fill: "#000000",
+        align: "center"
+    });
+    playerTankLevel.stroke = "#ffffff";
+    playerTankLevel.strokeThickness = 3;
+    playerTankLevel.fixedToCamera = true;
 }
 
 function _update() {
