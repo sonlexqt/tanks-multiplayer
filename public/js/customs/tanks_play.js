@@ -31,6 +31,7 @@ var platforms;
 var hpItems;
 var weaponItems;
 var itemsList;
+var pin;
 
 var ready = false; // ready = "is connected to server ?"
 var eurecaServer;
@@ -484,10 +485,12 @@ PlayerTank.prototype.update = function () {
     // Set destination on right click
     if (this.game.input.activePointer.rightButton.isDown && this.mouseUpFlag == true) {
         this.mouseUpFlag = false;
-
         var desx = Math.round(this.game.input.x + this.game.camera.position.x - GAME_WIDTH / 2);
         var desy = Math.round(this.game.input.y + this.game.camera.position.y - GAME_HEIGHT / 2);
         this.finalDestination = new Phaser.Point(desx, desy);
+        pin.x = desx;
+        pin.y = desy;
+        pin.alpha = 1;
         lineGraphics.clear();
         var x = Math.round(this.tank.x);
         var y = Math.round(this.tank.y);
@@ -523,6 +526,7 @@ PlayerTank.prototype.update = function () {
     if (this.moveComplete) {
         this.finalDestination = null;
         this.tank.body.velocity.set(0, 0);
+        pin.alpha = 0;
     }
 
     if (this.path && this.path.length > 0 && this.path[0].point.distance(new Phaser.Point(this.tank.x, this.tank.y)) <= 3) {
@@ -776,6 +780,10 @@ function _create() {
     playerTankLevel.stroke = "#ffffff";
     playerTankLevel.strokeThickness = 3;
     playerTankLevel.fixedToCamera = true;
+
+    pin = game.add.sprite(0, 0, 'pin');
+    pin.anchor.setTo(0.5, 0.8);
+    pin.alpha = 0;
 }
 
 function _update() {
