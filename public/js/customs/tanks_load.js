@@ -34,11 +34,14 @@ var loadState = {
         game.load.image('menuBackground', '/public/assets/images/menu-background.jpg');
         game.load.image('hpitem', '/public/assets/images/item1.png');
         game.load.image('weaponitem', '/public/assets/images/item2.png');
-        game.load.image('gamename', '/public/assets/images/game-name.png')
+        game.load.image('gamename', '/public/assets/images/game-name.png');
+        game.load.image('victory', '/public/assets/images/victory.jpg');
+        game.load.image('defeat', '/public/assets/images/defeat.jpg');
         // Audio
         game.load.audio('mainMusic', '/public/assets/audio/main-music.ogg');
         game.load.audio('bulletSound1', '/public/assets/audio/bullet-sound-1.ogg');
         game.load.audio('explosionSound', '/public/assets/audio/explosion-sound.ogg');
+
     },
     create: function(){
         game.stage.disableVisibilityChange = true;
