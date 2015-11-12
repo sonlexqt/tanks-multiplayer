@@ -20,13 +20,50 @@ var eurecaServer = new eureca.Server({
         'updateFire',
         'updateTankHitBullets',
         'spawnNewCPUTank',
-        'updateCPUMovement'
+        'updateCPUMovement',
+        'spawnItems',
+        'updateHitItem'
     ]
 });
 // Set of clients
 var clients = {};
 // Set of CPU tanks
 var cpuTanks = {};
+// List of items
+var items = [
+    {
+        id: 1,
+        type: 'hp',
+        position: {
+            x: 197,
+            y: 196
+        }
+    },
+    {
+        id: 2,
+        type: 'hp',
+        position: {
+            x: 1633,
+            y: 1630
+        }
+    },
+    {
+        id: 3,
+        type: 'weapon',
+        position: {
+            x: 1625,
+            y: 196
+        }
+    },
+    {
+        id: 4,
+        type: 'weapon',
+        position: {
+            x: 170,
+            y: 1676
+        }
+    }
+];
 
 // Attach eureca.io to our http server
 eurecaServer.attach(server);
@@ -97,6 +134,7 @@ eurecaServer.exports.handshake = function(id, name, teamNumber, clientInitialPos
         for (var i in cpuTanks){
             clients[c].remote.spawnNewCPUTank(cpuTanks[i].id, cpuTanks[i].name, cpuTanks[i].teamNumber, cpuTanks[i].lastState.destination.x, cpuTanks[i].lastState.destination.y);
         }
+        newClientRemote.spawnItems(items);
     }
 };
 
@@ -173,6 +211,20 @@ eurecaServer.exports.handleTankDeath = function(tankId, isCPUTank){
         }
     }
     updateInformation();
+};
+
+eurecaServer.exports.handleHitItem = function(itemId, tankId){
+    console.log('itemId: ' + itemId);
+    console.log(items);
+    for (var i = 0; i < items.length; i++){
+        if (items[i].id == itemId){
+            var itemType = items[i].type;
+            items.splice(i, 1);
+            for (var key in clients){
+                clients[key].remote.updateHitItem(itemId, itemType, items, tankId);
+            }
+        }
+    }
 };
 
 function updateInformation(){

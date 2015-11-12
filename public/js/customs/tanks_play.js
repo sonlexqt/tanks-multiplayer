@@ -29,11 +29,10 @@ var graphUtil;
 var platforms;
 var hpItems;
 var weaponItems;
+var itemsList;
 
 var ready = false; // ready = "is connected to server ?"
 var eurecaServer;
-
-
 
 function eurecaClientSetup() {
     var eurecaClient = new Eureca.Client();
@@ -152,19 +151,43 @@ function eurecaClientSetup() {
                     tanksList[bulletInfo.ownerId].level++;
                 }
             }
-            // TODO XIN
-            //else if (cpuTankList[bulletInfo.tankId]) {
-            //    var tank = tanksList[bulletInfo.tankId].tank;
-            //    tank.tankObject.hp -= BULLET_DAMAGE
-            //    if (tank.tankObject.hp <= 0) {
-            //        var explosionAnimation = explosions.getFirstExists(false);
-            //        explosionAnimation.reset(tank.x, tank.y);
-            //        explosionAnimation.play('explode', 30, false, true);
-            //        tank.tankObject.kill();
-            //        tanksList[bulletInfo.ownerId].level++;
-            //    }
-            //}
         };
+
+        // spawnItems
+        eurecaClient.exports.spawnItems = function(items){
+            for (var i = 0; i < items.length; i++){
+                if (items[i].type == 'hp'){
+                    createNewHPItem(items[i].position.x, items[i].position.y, items[i].id);
+                }
+                if (items[i].type == 'weapon'){
+                    createNewWeaponItem(items[i].position.x, items[i].position.y, items[i].id);
+                }
+            }
+            itemsList = items;
+        };
+
+        // updateHitItem
+        eurecaClient.exports.updateHitItem = function(itemId, itemType, items, tankId){
+            switch (itemType){
+                case 'hp':
+                    for (var i = 0; i < hpItems.children.length; i++){
+                        if (hpItems.children[i].itemId == itemId){
+                            tanksList[tankId].hp += 10;
+                            hpItems.children.splice(i, 1);
+                        }
+                    }
+                    break;
+                case 'weapon':
+                    for (var i = 0; i < weaponItems.children.length; i++){
+                        if (weaponItems.children[i].itemId == itemId){
+                            tanksList[tankId].level += 1
+                            weaponItems.children.splice(i, 1);
+                        }
+                    }
+                    break;
+            }
+            itemsList = items;
+        }
     });
 }
 
@@ -728,13 +751,13 @@ function _create() {
 
     hpItems = game.add.group();
     hpItems.enableBody = true;
-    createNewHPItem(197, 196);
-    createNewHPItem(1633, 1630);
+    //createNewHPItem(197, 196);
+    //createNewHPItem(1633, 1630);
 
     weaponItems = game.add.group();
     weaponItems.enableBody = true;
-    createNewWeaponItem(1625, 196);
-    createNewWeaponItem(170, 1676);
+    //createNewWeaponItem(1625, 196);
+    //createNewWeaponItem(170, 1676);
 }
 
 function _update() {
@@ -762,37 +785,38 @@ function _update() {
         }
     }
 
-    if (hpItems && hpItems.length < 1) {
-        var pos = Math.round(Math.random() * 4);
-        var x, y;
-        switch (pos){
-            case 0:
-            {
-                x = Math.round(177 + Math.random() * 323);
-                y = Math.round(162 + Math.random() * 317);
-                break;
-            }
-            case 1:
-            {
-                x = Math.round(1590 + Math.random() * 283);
-                y = Math.round(174 + Math.random() * 326);
-                break;
-            }
-            case 2:
-            {
-                x = Math.round(1592 + Math.random() * 298);
-                y = Math.round(1567 + Math.random() * 321);
-                break;
-            }
-            case 3:
-            {
-                x = Math.round(174 + Math.random() * 356);
-                y = Math.round(1538 + Math.random() * 346);
-                break;
-            }
-        }
-        createNewHPItem(x - 86, y - 86);
-    }
+    // TODO XIN
+    //if (hpItems && hpItems.length < 1) {
+    //    var pos = Math.round(Math.random() * 4);
+    //    var x, y;
+    //    switch (pos){
+    //        case 0:
+    //        {
+    //            x = Math.round(177 + Math.random() * 323);
+    //            y = Math.round(162 + Math.random() * 317);
+    //            break;
+    //        }
+    //        case 1:
+    //        {
+    //            x = Math.round(1590 + Math.random() * 283);
+    //            y = Math.round(174 + Math.random() * 326);
+    //            break;
+    //        }
+    //        case 2:
+    //        {
+    //            x = Math.round(1592 + Math.random() * 298);
+    //            y = Math.round(1567 + Math.random() * 321);
+    //            break;
+    //        }
+    //        case 3:
+    //        {
+    //            x = Math.round(174 + Math.random() * 356);
+    //            y = Math.round(1538 + Math.random() * 346);
+    //            break;
+    //        }
+    //    }
+    //    createNewHPItem(x - 86, y - 86);
+    //}
 
     if (scoreText){
         updateScore();
@@ -854,28 +878,34 @@ var bulletHitPlatform = function (bullet, platform) {
     //console.log('hit platform');
 };
 
-var createNewHPItem = function(x, y){
+var createNewHPItem = function(x, y, id){
     var item = hpItems.create(x, y, 'hpitem');
     item.body.setSize(50, 49, 78 ,73);
     item.body.immovable = true;
+    item.x = x;
+    item.y = y;
+    item.type = 'hp';
+    item.itemId = id;
 };
 
-var createNewWeaponItem = function(x, y){
+var createNewWeaponItem = function(x, y, id){
     var item = weaponItems.create(x, y, 'weaponitem');
     item.body.setSize(47, 54, 115 ,59);
     item.body.immovable = true;
+    item.x = x;
+    item.y = y;
+    item.type = 'weapon';
+    item.itemId = id;
 };
 
 var onHitHPItem = function(tank, item) {
-    tank.tankObject.hp += 10;
+    eurecaServer.handleHitItem(item.itemId, tank.tankObject.id);
     item.kill();
-    hpItems.remove(item);
 };
 
 var onHitWeaponItem = function(tank, item) {
-    tank.tankObject.level += 1;
+    eurecaServer.handleHitItem(item.itemId, tank.tankObject.id);
     item.kill();
-    weaponItems.remove(item);
 };
 
 function updateScore(){
