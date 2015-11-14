@@ -86,15 +86,11 @@ function eurecaClientSetup() {
 
         // Update the movement of a tank with the specified ID
         eurecaClient.exports.updateMovement = function (id, state) {
-            var statePath = state.path;
-            var restoredPath = [];
-            for (var i = 0; i < statePath.length; i++) {
-                restoredPath.push(new Vertex(statePath[i].point.x, statePath[i].point.y, statePath[i].key));
-            }
+            var tank = tanksList[id];
+            var des = state.destination;
             if (tanksList[id]) {
-                tanksList[id].path = restoredPath;
-                tanksList[id].desireAngle = state.desireAngle;
-                tanksList[id].update();
+                tank.needToUpdatePath = true;
+                tank.pathData = des;
             }
         };
 
@@ -258,6 +254,8 @@ var Tank = function (id, name, teamNumber, x, y, game, tankSprite) {
     this.desireAngle = 0;
 
     this.tank.tankObject = this;
+    this.needToUpdatePath = false;
+    this.pathData = null;
 };
 
 var CPUTank = function (id, name, teamNumber, x, y, game, tankSprite) {
@@ -265,15 +263,15 @@ var CPUTank = function (id, name, teamNumber, x, y, game, tankSprite) {
     this.isCPUTank = true;
     this.finalDestination = this.getTargetPosition();
     //console.log(this.finalDestination);
-    var x = Math.round(this.tank.x);
-    var y = Math.round(this.tank.y);
-    var calculatePath = graphUtil.getShortestPath(new Vertex(x, y, 'start'), new Vertex(this.finalDestination.x, this.finalDestination.y, 'end'));
+    var toX = Math.round(this.tank.x);
+    var toY = Math.round(this.tank.y);
+    var calculatePath = graphUtil.getShortestPath(new Vertex(toX, toY, 'start'), new Vertex(this.finalDestination.x, this.finalDestination.y, 'end'));
     this.path = calculatePath.path;
     eurecaServer.handleCPUMovement({
         cpuId: this.id,
         destination: {
-            x: x,
-            y: y
+            x: toX,
+            y: toY
         },
         path: this.path,
         desireAngle: this.desireAngle
@@ -354,7 +352,6 @@ CPUTank.prototype.update = function () {
         if (dis <= 300 && this.teamNumber != tanksList[key].teamNumber && !tanksList[key].isDied) {
             this.fireToTank(tanksList[key]);
         }
-        this.game.physics.arcade.collide(tanksList[key].tank, this.tank, this.findNewPosition, null, this);
     }
     game.physics.arcade.collide(this.tank, platforms, this.findNewPosition, null, this);
 };
@@ -387,7 +384,10 @@ CPUTank.prototype.getTargetPosition = function () {
 
     return graphUtil.getARandomValidPosition();
 };
-
+CPUTank.prototype.hitByPlaer = function(){
+    this.findNewPosition();
+    console.log("hit by player");
+}
 CPUTank.prototype.findNewPosition = function () {
     this.finalDestination = this.getTargetPosition();
     //console.log(this.finalDestination);
@@ -487,34 +487,17 @@ PlayerTank.prototype.update = function () {
         this.mouseUpFlag = false;
         var desx = Math.round(this.game.input.x + this.game.camera.position.x - GAME_WIDTH / 2);
         var desy = Math.round(this.game.input.y + this.game.camera.position.y - GAME_HEIGHT / 2);
-        this.finalDestination = new Phaser.Point(desx, desy);
-        pin.x = desx;
-        pin.y = desy;
-        pin.alpha = 1;
-        lineGraphics.clear();
-        var x = Math.round(this.tank.x);
-        var y = Math.round(this.tank.y);
-        var calculatePath = graphUtil.getShortestPath(new Vertex(x, y, 'start'), new Vertex(this.finalDestination.x, this.finalDestination.y, 'end'));
-        this.path = calculatePath.path;
-
-        this.finalDestination = calculatePath.des;
         // Update flag
         this.moveComplete = false;
+        this.tank.body.velocity.set(0, 0);
         // Send movement information to server
         eurecaServer.handleMovement({
             destination: {
                 x: desx,
                 y: desy
-            },
-            path: this.path,
-            desireAngle: this.desireAngle
+            }
         });
-
-        moveToObject(this.tank, this.path[0].point, Data.tank_velocity);
-
-        if (Data.DEBUG) {
-            drawPath(this.path, lineGraphics);
-        }
+        this.path = null;
     }
     if (this.game.input.activePointer.rightButton.isUp && this.mouseUpFlag == false) {
         this.mouseUpFlag = true;
@@ -543,9 +526,34 @@ PlayerTank.prototype.update = function () {
             //this.game.physics.arcade.overlap(this.tank, tanksList[key].tank, tankCollideTankHandler, null, this);
         }
     }
+
+    if (this.needToUpdatePath){
+        this.needToUpdatePath = false;
+        if (this.pathData){
+            this.updatePath(this.pathData);
+        }
+        this.pathData = null;
+    }
+
     game.physics.arcade.collide(this.tank, platforms);
     game.physics.arcade.overlap(this.tank, hpItems, onHitHPItem, null, this);
     game.physics.arcade.overlap(this.tank, weaponItems, onHitWeaponItem, null, this);
+};
+
+PlayerTank.prototype.updatePath = function(des){
+    this.finalDestination = new Phaser.Point(des.x, des.y);
+    pin.x = des.x;
+    pin.y = des.y;
+    pin.alpha = 1;
+    lineGraphics.clear();
+    var x = Math.round(this.tank.x);
+    var y = Math.round(this.tank.y);
+    var calculatePath = graphUtil.getShortestPath(new Vertex(x, y, 'start'), new Vertex(this.finalDestination.x, this.finalDestination.y, 'end'));
+    this.path = calculatePath.path;
+    this.finalDestination = calculatePath.des;
+    if (Data.DEBUG) {
+        drawPath(this.path, lineGraphics);
+    }
 };
 
 PlayerTank.prototype.kill = function () {
@@ -574,6 +582,21 @@ var OtherPlayerTank = function (id, name, teamNumber, x, y, game, tankSprite, pl
     this.playerTank = playerTank;
 };
 
+OtherPlayerTank.prototype.updatePath = function(des){
+    this.finalDestination = new Phaser.Point(des.x, des.y);
+    pin.x = des.x;
+    pin.y = des.y;
+    pin.alpha = 1;
+    lineGraphics.clear();
+    var x = Math.round(this.tank.x);
+    var y = Math.round(this.tank.y);
+    var calculatePath = graphUtil.getShortestPath(new Vertex(x, y, 'start'), new Vertex(this.finalDestination.x, this.finalDestination.y, 'end'));
+    this.path = calculatePath.path;
+    this.finalDestination = calculatePath.des;
+    if (Data.DEBUG) {
+        drawPath(this.path, lineGraphics);
+    }
+};
 OtherPlayerTank.prototype.update = function () {
     this.turret.x = this.tank.x;
     this.turret.y = this.tank.y;
@@ -617,6 +640,13 @@ OtherPlayerTank.prototype.update = function () {
         if (key != this.id) {
             this.game.physics.arcade.collide(tanksList[key].tank, this.tank);
         }
+    }
+    if (this.needToUpdatePath){
+        this.needToUpdatePath = false;
+        if (this.pathData){
+            this.updatePath(this.pathData);
+        }
+        this.pathData = null;
     }
     game.physics.arcade.collide(this.tank, platforms);
     game.physics.arcade.overlap(this.tank, hpItems, onHitHPItem, null, this);
