@@ -13,8 +13,7 @@ var tanksList = {};
 var blueTeamTanks = 0;
 var redTeamTanks = 0;
 var donePreparingCPUTanks = false;
-// TODO
-var playerInitialCPUTanks = 2;
+var playerInitialCPUTanks = 0; // TODO XIN
 var mouse;
 // Explosions
 var NUM_OF_EXPLOSIONS = 10;
@@ -153,6 +152,7 @@ function eurecaClientSetup() {
 
         // spawnItems
         eurecaClient.exports.spawnItems = function(items){
+            console.log('spawnItems');
             for (var i = 0; i < items.length; i++){
                 if (items[i].type == 'hp'){
                     createNewHPItem(items[i].position.x, items[i].position.y, items[i].id);
@@ -166,23 +166,29 @@ function eurecaClientSetup() {
 
         // updateHitItem
         eurecaClient.exports.updateHitItem = function(itemId, itemType, items, tankId){
+            console.log('> updateHitItem');
             switch (itemType){
                 case 'hp':
                     for (var i = 0; i < hpItems.children.length; i++){
                         if (hpItems.children[i].itemId == itemId){
                             tanksList[tankId].hp += 10;
                             hpItems.children.splice(i, 1);
+                            break;
                         }
                     }
                     break;
                 case 'weapon':
                     for (var i = 0; i < weaponItems.children.length; i++){
                         if (weaponItems.children[i].itemId == itemId){
-                            tanksList[tankId].level += 1
+                            tanksList[tankId].level += 1;
                             weaponItems.children.splice(i, 1);
+                            break;
                         }
                     }
                     break;
+            }
+            for (var key in tanksList){
+                tanksList[key].justHitItem = false;
             }
             itemsList = items;
         }
@@ -256,6 +262,7 @@ var Tank = function (id, name, teamNumber, x, y, game, tankSprite) {
     this.tank.tankObject = this;
     this.needToUpdatePath = false;
     this.pathData = null;
+    this.justHitItem = false;
 };
 
 var CPUTank = function (id, name, teamNumber, x, y, game, tankSprite) {
@@ -965,13 +972,24 @@ var createNewWeaponItem = function(x, y, id){
 };
 
 var onHitHPItem = function (tank, item) {
-    eurecaServer.handleHitItem(item.itemId, tank.tankObject.id);
+    var itemId = item.itemId;
     item.kill();
+    if (tank.tankObject.justHitItem == false && tank.tankObject.id == playerTankId){
+        console.log('hitHPItem');
+        eurecaServer.handleHitItem(item.itemId, tank.tankObject.id);
+        tank.tankObject.justHitItem = true;
+    }
+
 };
 
 var onHitWeaponItem = function (tank, item) {
-    eurecaServer.handleHitItem(item.itemId, tank.tankObject.id);
+    var itemId = item.itemId;
     item.kill();
+    if (tank.tankObject.justHitItem == false && tank.tankObject.id == playerTankId){
+        console.log('hitWeaponItem');
+        eurecaServer.handleHitItem(item.itemId, tank.tankObject.id);
+        tank.tankObject.justHitItem = true;
+    }
 };
 
 function updateScore() {

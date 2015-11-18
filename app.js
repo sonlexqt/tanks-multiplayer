@@ -214,17 +214,29 @@ eurecaServer.exports.handleTankDeath = function(tankId, isCPUTank){
 };
 
 eurecaServer.exports.handleHitItem = function(itemId, tankId){
-    console.log('itemId: ' + itemId);
+    console.log('> HandleHitItem ' + Date.now());
+    console.log('* itemId: ' + itemId);
+    console.log('* before: ');
     console.log(items);
+    for (var key in clients){
+        if (!clients[key].isDied){
+            clients[key].isHandledHitItem = false;
+        }
+    }
     for (var i = 0; i < items.length; i++){
         if (items[i].id == itemId){
             var itemType = items[i].type;
             items.splice(i, 1);
             for (var key in clients){
-                clients[key].remote.updateHitItem(itemId, itemType, items, tankId);
+                if (clients[key].isDied != true && clients[key].isHandledHitItem == false){
+                    clients[key].remote.updateHitItem(itemId, itemType, items, tankId);
+                    clients[key].isHandledHitItem = true;
+                }
             }
         }
     }
+    console.log('* after: ');
+    console.log(items);
 };
 
 function updateInformation(){

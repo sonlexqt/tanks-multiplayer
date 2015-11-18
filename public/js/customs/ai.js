@@ -166,9 +166,9 @@ GraphUtils.prototype.getShortestPath = function (startPoint, endPoint) {
     if (!validStartPoint){
         validStartPoint = startPoint.point;
     } else {
-        console.log('found new point');
-        console.log('old' + startPoint.point);
-        console.log('new' + validStartPoint);
+        //console.log('found new point');
+        //console.log('old' + startPoint.point);
+        //console.log('new' + validStartPoint);
     }
     var crossoverObstacle = this.getCrossObstacles(new Vertex(validStartPoint.x, validStartPoint.y, 'start'), endPoint);
     // crossoverObstacle.length - 1 is the index of endpoint (as an obstacle)
@@ -176,10 +176,10 @@ GraphUtils.prototype.getShortestPath = function (startPoint, endPoint) {
     var closestValidDestination;
     for (var obs = 0; obs < etra.length; obs++) {
         if (GraphUtils.isAPointinAPolygon(endPoint.point, etra[obs].polygon)) {
-            console.log("inside");
+            //console.log("inside");
             closestValidDestination = GraphUtils.getClosestValidDestination(endPoint.point, etra[obs]);
             closestValidDestination = GraphUtils.findAnotherPointNoCollide(closestValidDestination, etra[obs]);
-            console.log('closest' + closestValidDestination);
+            //console.log('closest' + closestValidDestination);
             crossoverObstacle = this.getCrossObstacles(new Vertex(validStartPoint.x, validStartPoint.y, 'start'), new Vertex(closestValidDestination.x, closestValidDestination.y, 'end'));
             break;
         }
