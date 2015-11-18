@@ -13,7 +13,7 @@ var tanksList = {};
 var blueTeamTanks = 0;
 var redTeamTanks = 0;
 var donePreparingCPUTanks = false;
-var playerInitialCPUTanks = 0; // TODO XIN
+var playerInitialCPUTanks = 2; // TODO XIN
 var mouse;
 // Explosions
 var NUM_OF_EXPLOSIONS = 10;
