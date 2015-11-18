@@ -285,6 +285,7 @@ var CPUTank = function (id, name, teamNumber, x, y, game, tankSprite) {
     this.fireTime = 0;
     this.hp = 50;
     this.isDied = false;
+    this.type = 'CPU';
 };
 CPUTank.prototype = Object.create(Tank);
 CPUTank.prototype.update = function () {
@@ -346,12 +347,14 @@ CPUTank.prototype.update = function () {
             drawPath(this.path, lineGraphics);
         }
     }
-    game.physics.arcade.collide(this.tank, platforms, this.findNewPosition, null, this);
     for (var key in tanksList) {
         var tankPos = new Phaser.Point(this.tank.x, this.tank.y);
         var dis = tankPos.distance(new Phaser.Point(tanksList[key].tank.x, tanksList[key].tank.y));
         if (dis <= 300 && this.teamNumber != tanksList[key].teamNumber && !tanksList[key].isDied) {
             this.fireToTank(tanksList[key]);
+        }
+        if (this.id != key){
+            game.physics.arcade.collide(this.tank, tanksList[key].tank, this.findNewPosition, null, this);
         }
     }
     game.physics.arcade.collide(this.tank, platforms, this.findNewPosition, null, this);
@@ -518,7 +521,7 @@ PlayerTank.prototype.update = function () {
     }
 
     for (var key in tanksList) {
-        if (key != this.id) {
+        if (key != this.id && tanksList[key].type != 'CPU') {
             this.game.physics.arcade.collide(tanksList[key].tank, this.tank);
             //this.game.physics.arcade.overlap(this.tank, tanksList[key].tank, tankCollideTankHandler, null, this);
         }
