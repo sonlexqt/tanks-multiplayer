@@ -213,6 +213,7 @@ var Tank = function (id, name, teamNumber, x, y, game, tankSprite) {
     this.tank.anchor.setTo(0.5, 0.5);
     this.game.physics.arcade.enable(this.tank);
     this.tank.body.collideWorldBounds = true;
+    this.tank.body.setSize(57, 64, 11, 11);
 
 
     // Attach the turret to the tank
@@ -384,10 +385,6 @@ CPUTank.prototype.getTargetPosition = function () {
 
     return graphUtil.getARandomValidPosition();
 };
-CPUTank.prototype.hitByPlaer = function(){
-    this.findNewPosition();
-    console.log("hit by player");
-}
 CPUTank.prototype.findNewPosition = function () {
     this.finalDestination = this.getTargetPosition();
     //console.log(this.finalDestination);
